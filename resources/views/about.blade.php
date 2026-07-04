@@ -7,10 +7,9 @@
 
     {{-- Hero Section --}}
     <div class="bg-blue-50 rounded-lg p-8 text-center mb-12">
-        <h1 class="text-4xl font-bold mb-4 text-blue-800">About Deluxe Plus</h1>
+        <h1 class="text-4xl font-bold mb-4 text-blue-800">About Al Reem Expo</h1>
         <p class="text-lg text-gray-700 max-w-2xl mx-auto">
-            Deluxe Plus Medical & Dental Supplies is committed to providing high-quality medical and dental products with exceptional customer service. 
-            We strive to make healthcare and dental care accessible, reliable, and professional for all our clients.
+            Al Reem Expo specializes in supplying premium imported products from around the world.
         </p>
     </div>
 

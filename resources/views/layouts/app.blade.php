@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <title>@yield('title', 'Deluxe Plus')</title>
+    <title>@yield('title', 'Alreem')</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
@@ -20,7 +20,7 @@
     <meta property="og:image" content="@yield('og_image', asset('images/og-default.jpg'))">
     <meta name="twitter:card" content="summary_large_image">
 
-    {{-- JSON-LD blocks from pages (Product, Breadcrumbs, LocalBusiness, etc.) --}}
+    {{-- JSON-LD blocks from pages --}}
     @stack('structured-data')
 
     <style>
@@ -30,28 +30,59 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-    <!-- Swiper CSS -->
+    {{-- Swiper CSS --}}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 
-    <!-- Lightbox2 CSS -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/css/lightbox.min.css" rel="stylesheet" />
-
-    <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}" />
-
-    <!-- Alpine.js -->
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="icon" type="image/png" href="{{ asset('favicon.ico') }}" />
 </head>
-<body class="flex flex-col min-h-screen bg-gray-100 text-gray-800">
 
-    <!-- Navbar -->
+<body class="flex flex-col min-h-screen bg-gray-100 text-gray-800">
+    @php
+        $cartCount = 0;
+
+        try {
+            if (Auth::check()) {
+                $cart = \App\Models\Cart::firstOrCreate(
+                    ['user_id' => Auth::id(), 'status' => 'active'],
+                    ['total_amount' => 0]
+                );
+
+                $cartCount = (int) $cart->items()->sum('quantity');
+            } else {
+                $sessionCart = session()->get('cart', []);
+                $cartCount = is_array($sessionCart) ? (int) array_sum($sessionCart) : 0;
+            }
+        } catch (\Throwable $e) {
+            $cartCount = 0;
+            report($e);
+        }
+
+        $wishlistCount = 0;
+
+        if (Auth::check()) {
+            try {
+                $wishlistCount = (int) (auth()->user()->wishlist?->count() ?? 0);
+            } catch (\Throwable $e) {
+                $wishlistCount = 0;
+                report($e);
+            }
+        }
+    @endphp
+
+    {{-- Navbar --}}
     <nav x-data="{ open: false }" class="bg-white border-b shadow sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center space-x-3">
-                    <img src="{{ asset('storage/logo.jpeg') }}" alt="Logo" style="width: 40px; height: 40px;" />
-                    <span class="text-xl font-bold text-brand-blue">Deluxe Plus</span>
-                </div>
-                <div class="hidden md:flex space-x-6">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-14 sm:h-16">
+                {{-- Logo --}}
+                <a href="{{ route('home') }}" class="flex items-center gap-2 min-w-0 shrink-0">
+                    <img src="{{ asset('storage/logo.jpeg') }}" alt="Logo" class="h-8 w-8 sm:h-10 sm:w-10 rounded object-cover shrink-0" />
+                    <span class="text-lg sm:text-2xl font-extrabold tracking-wide text-brand-blue truncate">
+                        Alreem
+                    </span>
+                </a>
+
+                {{-- Desktop links --}}
+                <div class="hidden md:flex items-center space-x-6">
                     <a href="{{ route('home') }}" class="hover:text-green-600">Home</a>
                     <a href="{{ route('products.index') }}" class="hover:text-green-600">Products</a>
                     <a href="{{ route('contact.show') }}" class="hover:text-green-600">Contact</a>
@@ -61,15 +92,21 @@
                             <a href="{{ route('admin.dashboard') }}" class="text-blue-600 hover:underline">⚙️ Admin Panel</a>
                         @endif
 
-                        <a href="{{ route('wishlist.index') }}" class="relative inline-block hover:text-pink-600">
-                            ❤️ Wishlist
-                            <span id="wishlist-count"
-                                  class="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center {{ (auth()->check() && auth()->user()->wishlist->count()) ? '' : 'hidden' }}">
-                                {{ auth()->check() ? (auth()->user()->wishlist->count() ?? 0) : 0 }}
+                        <a href="{{ route('wishlist.index') }}" class="relative inline-flex items-center gap-1 hover:text-pink-600">
+                            <span class="relative inline-flex items-center justify-center h-6 w-6">
+                                ❤️
+                                <span id="wishlist-count"
+                                      data-count="{{ $wishlistCount }}"
+                                      class="absolute -top-2 -right-2 z-10 min-w-[18px] h-[18px] px-1 items-center justify-center bg-red-600 text-white text-[10px] leading-none rounded-full"
+                                      style="display: {{ $wishlistCount > 0 ? 'flex' : 'none' }};">
+                                    {{ $wishlistCount }}
+                                </span>
                             </span>
+                            <span>Wishlist</span>
                         </a>
 
                         <span class="text-gray-700">Hi, {{ Auth::user()->name }}</span>
+
                         <form method="POST" action="{{ route('logout') }}" class="inline">
                             @csrf
                             <button type="submit" class="text-red-600 hover:underline">Logout</button>
@@ -81,35 +118,44 @@
 
                     <a href="{{ route('orders.index') }}" class="text-gray-700 hover:text-blue-600">Orders</a>
 
-                    @php
-                        $cartCount = 0;
-                        $cartId = session()->get('cart_id');
-                        if(Auth::check()) {
-                            $cartCount = \App\Models\Cart::where('user_id', Auth::id())
-                                ->where('status', 'active')
-                                ->first()?->items()->sum('quantity') ?? 0;
-                        } elseif($cartId) {
-                            $cartCount = \App\Models\Cart::find($cartId)?->items()->sum('quantity') ?? 0;
-                        }
-                    @endphp
+                    <a href="{{ route('cart.index') }}" class="relative inline-flex items-center justify-center h-6 w-6 text-indigo-600 hover:text-indigo-800">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.936-4.706 2.436-7.184.121-.598-.135-1.184-.634-1.545-.5-.361-1.155-.361-1.655-.037L7.5 14.25zm0 0L5.106 5.272M6 18.75a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm12 0a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" />
+                        </svg>
 
-                    <a href="{{ route('cart.index') }}" class="relative text-indigo-600 hover:underline">
-                        🛒
                         <span id="cart-count"
-                              class="absolute -top-2 -right-3 bg-red-500 text-white text-xs rounded-full px-2 py-0.5 {{ $cartCount ? '' : 'hidden' }}">
+                              data-count="{{ $cartCount }}"
+                              class="absolute -top-2 -right-2 z-10 min-w-[18px] h-[18px] px-1 items-center justify-center bg-red-500 text-white text-[10px] leading-none rounded-full"
+                              style="display: {{ $cartCount > 0 ? 'flex' : 'none' }};">
                             {{ $cartCount }}
                         </span>
                     </a>
                 </div>
 
-                <!-- Mobile menu toggle -->
-                <div class="md:hidden">
-                    <button @click="open = !open" class="text-gray-600 focus:outline-none">
+                {{-- Mobile cart icon + hamburger --}}
+                <div class="md:hidden flex items-center gap-1 shrink-0">
+                    <a href="{{ route('cart.index') }}" class="relative inline-flex items-center justify-center h-11 w-11 text-indigo-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.936-4.706 2.436-7.184.121-.598-.135-1.184-.634-1.545-.5-.361-1.155-.361-1.655-.037L7.5 14.25zm0 0L5.106 5.272M6 18.75a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm12 0a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" />
+                        </svg>
+
+                        <span id="cart-count-mobile-icon"
+                              data-count="{{ $cartCount }}"
+                              class="absolute top-0.5 right-0.5 z-10 min-w-[16px] h-[16px] px-1 items-center justify-center bg-red-500 text-white text-[10px] leading-none rounded-full"
+                              style="display: {{ $cartCount > 0 ? 'flex' : 'none' }};">
+                            {{ $cartCount }}
+                        </span>
+                    </a>
+
+                    <button @click="open = !open"
+                            class="inline-flex items-center justify-center h-11 w-11 text-gray-600 focus:outline-none"
+                            aria-label="Toggle menu">
                         <svg x-show="!open" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
                              viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
+
                         <svg x-show="open" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
                              viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -120,55 +166,71 @@
             </div>
         </div>
 
-        <!-- Mobile Menu -->
-        <div x-show="open" class="md:hidden px-4 pt-2 pb-4 space-y-2 bg-white" @click.away="open = false">
-            <a href="{{ route('home') }}" class="block hover:text-green-600">Home</a>
-            <a href="{{ route('products.index') }}" class="block hover:text-green-600">Products</a>
-            <a href="{{ route('contact.show') }}" class="block hover:text-green-600">Contact</a>
+        {{-- Mobile Menu --}}
+        <div x-show="open"
+             x-transition
+             class="md:hidden border-t bg-white"
+             @click.away="open = false"
+             @click="open = false"
+             style="display: none;">
+            <div class="px-4 py-3 space-y-1">
+                <a href="{{ route('home') }}" class="flex items-center h-11 hover:text-green-600">Home</a>
+                <a href="{{ route('products.index') }}" class="flex items-center h-11 hover:text-green-600">Products</a>
+                <a href="{{ route('contact.show') }}" class="flex items-center h-11 hover:text-green-600">Contact</a>
+                <a href="{{ route('orders.index') }}" class="flex items-center h-11 text-gray-700 hover:text-blue-600">Orders</a>
 
-            @auth
-                @if(auth()->user()->is_admin)
-                    <a href="{{ route('admin.products.create') }}" class="block text-blue-600 hover:underline">➕ Add Product</a>
-                    <a href="{{ route('admin.dashboard') }}" class="block text-blue-600 hover:underline">⚙️ Admin Panel</a>
-                @endif
+                @auth
+                    @if(auth()->user()->is_admin)
+                        <div class="border-t my-1"></div>
+                        <a href="{{ route('admin.products.create') }}" class="flex items-center h-11 text-blue-600 hover:underline">➕ Add Product</a>
+                        <a href="{{ route('admin.dashboard') }}" class="flex items-center h-11 text-blue-600 hover:underline">⚙️ Admin Panel</a>
+                    @endif
 
-                <a href="{{ route('wishlist.index') }}" class="block hover:text-pink-600">❤️ Wishlist</a>
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="block text-red-600 hover:underline">Logout</button>
-                </form>
-            @else
-                <a href="{{ route('login') }}" class="block text-gray-700 hover:text-blue-600">Sign In</a>
-                <a href="{{ route('register') }}" class="block text-gray-700 hover:text-blue-600">Sign Up</a>
-            @endauth
+                    <div class="border-t my-1"></div>
 
-            <a href="{{ route('cart.index') }}" class="relative block text-indigo-600 hover:underline">
-                🛒 Cart
-                <span id="cart-count-mobile"
-                      class="absolute ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-0.5 {{ $cartCount ? '' : 'hidden' }}">
-                    {{ $cartCount }}
-                </span>
-            </a>
+                    <a href="{{ route('wishlist.index') }}" class="flex items-center gap-2 h-11 hover:text-pink-600">
+                        <span class="relative inline-flex items-center justify-center h-5 w-5">❤️</span>
+                        <span>Wishlist</span>
+                        <span id="wishlist-count-mobile"
+                              data-count="{{ $wishlistCount }}"
+                              class="min-w-[18px] h-[18px] px-1 items-center justify-center bg-red-600 text-white text-[10px] leading-none rounded-full"
+                              style="display: {{ $wishlistCount > 0 ? 'flex' : 'none' }};">
+                            {{ $wishlistCount }}
+                        </span>
+                    </a>
+
+                    <div class="flex items-center justify-between h-11">
+                        <span class="text-gray-700">Hi, {{ Auth::user()->name }}</span>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="text-red-600 hover:underline">Logout</button>
+                        </form>
+                    </div>
+                @else
+                    <div class="border-t my-1"></div>
+                    <a href="{{ route('login') }}" class="flex items-center h-11 text-gray-700 hover:text-blue-600">Sign In</a>
+                    <a href="{{ route('register') }}" class="flex items-center h-11 text-gray-700 hover:text-blue-600">Sign Up</a>
+                @endauth
+            </div>
         </div>
     </nav>
 
     @include('partials.categories-bar')
 
-    <!-- Main Content -->
+    {{-- Main Content --}}
     <main class="flex-grow">
         <div class="max-w-7xl mx-auto px-4 py-8">
             @yield('content')
         </div>
     </main>
 
-    <!-- Footer -->
+    {{-- Footer --}}
     <footer class="bg-gray-900 text-gray-300 mt-16">
         <div class="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
-
             <div>
-                <img src="{{ asset('storage/logo.jpeg') }}" alt="Deluxe Plus Logo" class="w-32 mb-4">
+                <img src="{{ asset('storage/logo.jpeg') }}" alt="Alreem Logo" class="w-32 mb-4">
                 <p class="text-gray-400 text-sm">
-                    Deluxe Plus offers premium dental and medical supplies to enhance your practice. Quality and service you can trust.
+                    Al Reem Expo specializes in supplying premium imported products from around the world.
                 </p>
             </div>
 
@@ -195,11 +257,13 @@
             <div>
                 <h3 class="text-white font-semibold mb-4">Newsletter</h3>
                 <p class="text-gray-400 text-sm mb-4">Subscribe to get the latest updates and offers.</p>
+
                 @if(session('success'))
                     <div class="bg-green-100 text-green-800 p-2 rounded mb-3">
                         {{ session('success') }}
                     </div>
                 @endif
+
                 <form action="{{ route('newsletter.subscribe') }}" method="POST" class="flex">
                     @csrf
                     <input type="email" name="email" placeholder="Enter your email" required
@@ -208,20 +272,21 @@
                         Subscribe
                     </button>
                 </form>
+
                 @error('email')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>
-
         </div>
 
         <div class="border-t border-gray-800 mt-8 py-4 text-center text-sm text-gray-500">
-            &copy; {{ date('Y') }} Deluxe Plus Medical & Dental Supplies. All rights reserved.
+            &copy; {{ date('Y') }} Al Reem Expo. Developed by Web Weavers Software All rights reserved.
         </div>
     </footer>
 
-    <!-- Swiper JS -->
+    {{-- Swiper JS --}}
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.swiper').forEach(swiperEl => {
@@ -241,62 +306,6 @@
                 });
             });
         });
-    </script>
-
-    <!-- Lightbox2 JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/js/lightbox.min.js"></script>
-
-    {{-- Wishlist toggle (AJAX with graceful fallback) --}}
-    <script>
-    document.addEventListener('submit', async (e) => {
-        const form = e.target.closest('.wishlist-fallback-form');
-        if (!form) return;
-
-        e.preventDefault();
-
-        const tokenMeta = document.querySelector('meta[name="csrf-token"]');
-        const token = tokenMeta ? tokenMeta.getAttribute('content') : null;
-        const btn = form.querySelector('.wishlist-btn');
-
-        try {
-            const res = await fetch(form.action, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': token || '',
-                    'Accept': 'application/json'
-                }
-            });
-
-            if (!res.ok) { form.submit(); return; }
-
-            const data = await res.json();
-            const nowIn = (typeof data.in_wishlist !== 'undefined') ? !!data.in_wishlist : (data.action === 'added');
-
-            if (btn) {
-                const isTextButton = btn.classList.contains('text-pink-600'); // product page vs card
-                btn.dataset.in = nowIn ? '1' : '0';
-                btn.setAttribute('aria-pressed', nowIn ? 'true' : 'false');
-                btn.innerHTML = nowIn ? (isTextButton ? '❤️ In wishlist (click to remove)' : '❤️')
-                                      : (isTextButton ? '🤍 Add to Wishlist' : '🤍');
-                btn.title = nowIn ? 'Remove from wishlist' : 'Add to wishlist';
-                btn.classList.toggle('is-active', nowIn);
-            }
-
-            const counter = document.getElementById('wishlist-count');
-            if (counter && typeof data.count !== 'undefined') {
-                if (data.count > 0) {
-                    counter.textContent = data.count;
-                    counter.classList.remove('hidden');
-                } else {
-                    counter.textContent = '0';
-                    counter.classList.add('hidden');
-                }
-            }
-        } catch (err) {
-            console.error(err);
-            form.submit(); // fallback
-        }
-    });
     </script>
 
     @stack('scripts')

@@ -3,30 +3,57 @@
 @section('title', $product->name)
 
 @section('content')
+@php
+    $galleryImages = $product->images->sortBy(function ($i) {
+        return [($i->is_primary ? 0 : 1), $i->sort_order ?? 9999, $i->id];
+    })->values();
+
+    $hasDiscount = !is_null($product->discount_price) && $product->discount_price > 0;
+    $unit = $hasDiscount ? $product->discount_price : $product->price;
+
+    $inStock = (int) ($product->stock ?? 0) > 0;
+
+    $inWishlist = $inWishlist
+        ?? (isset($wishlistProducts) ? in_array($product->id, (array) $wishlistProducts) : false);
+@endphp
+
 <div class="max-w-6xl mx-auto">
-    {{-- Flash --}}
+    {{-- Flash messages --}}
     @if (session('success'))
-        <div class="mb-4 p-3 bg-green-100 text-green-800 rounded">{{ session('success') }}</div>
-    @endif
-    @if (session('error'))
-        <div class="mb-4 p-3 bg-red-100 text-red-800 rounded">{{ session('error') }}</div>
+        <div class="mb-4 rounded bg-green-100 p-3 text-green-800">
+            {{ session('success') }}
+        </div>
     @endif
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 bg-white p-6 rounded shadow">
+    @if (session('error'))
+        <div class="mb-4 rounded bg-red-100 p-3 text-red-800">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    <div class="grid grid-cols-1 gap-8 rounded bg-white p-6 shadow md:grid-cols-2">
         {{-- Gallery --}}
         <div>
-            @if ($product->images->isNotEmpty())
+            @if ($galleryImages->isNotEmpty())
                 <div class="grid grid-cols-2 gap-3">
-                    @foreach ($product->images as $image)
-                        <a href="{{ asset('storage/' . $image->image) }}" data-lightbox="product-gallery" class="block">
-                            <img src="{{ asset('storage/' . $image->image) }}"
-                                 alt="{{ $product->name }}"
-                                 class="w-full h-56 object-contain bg-gray-50 rounded border" />
+                    @foreach ($galleryImages as $image)
+                        <a
+                            href="{{ asset('storage/' . $image->image) }}"
+                            class="glightbox"
+                            data-gallery="product-gallery"
+                            data-title="{{ $product->name }}"
+                        >
+                            <img
+                                src="{{ asset('storage/' . $image->image) }}"
+                                alt="{{ $image->alt ?: $product->name }}"
+                                class="h-56 w-full rounded border bg-gray-50 object-contain"
+                                loading="lazy"
+                            />
                         </a>
                     @endforeach
                 </div>
             @else
-                <div class="w-full h-64 flex items-center justify-center bg-gray-100 rounded border">
+                <div class="flex h-64 w-full items-center justify-center rounded border bg-gray-100">
                     <span class="text-gray-500">No images available</span>
                 </div>
             @endif
@@ -34,17 +61,15 @@
 
         {{-- Info / Buy box --}}
         <div>
-            <h1 class="text-2xl font-bold mb-2">{{ $product->name }}</h1>
+            <h1 class="mb-2 text-2xl font-bold">
+                {{ $product->name }}
+            </h1>
 
-            @php
-                $hasDiscount = $product->discount_price && $product->discount_price > 0;
-                $unit = $hasDiscount ? $product->discount_price : $product->price;
-            @endphp
-
-            <div class="flex items-baseline gap-3 mb-4">
+            <div class="mb-4 flex items-baseline gap-3">
                 <div class="text-2xl font-semibold text-green-700">
                     ${{ number_format($unit, 2) }}
                 </div>
+
                 @if($hasDiscount)
                     <div class="text-gray-400 line-through">
                         ${{ number_format($product->price, 2) }}
@@ -52,71 +77,86 @@
                 @endif
             </div>
 
-            <p class="text-sm text-gray-600 mb-2">
+            <p class="mb-2 text-sm text-gray-600">
                 SKU: {{ $product->sku ?? '—' }}
             </p>
 
-            @if(($product->stock ?? 0) > 0)
-                <p class="text-sm text-green-700 mb-4">In stock: {{ $product->stock }}</p>
+            @if($inStock)
+                <p class="mb-4 text-sm text-green-700">
+                    In stock: {{ (int) $product->stock }}
+                </p>
             @else
-                <p class="text-sm text-red-600 mb-4">Out of stock</p>
+                <p class="mb-4 text-sm text-red-600">
+                    Out of stock
+                </p>
             @endif
 
-            <div class="flex items-center gap-3 mb-6">
-                <label for="qty-{{ $product->id }}" class="text-sm">Qty</label>
-                <input id="qty-{{ $product->id }}"
-                       type="number"
-                       min="1"
-                       max="{{ max(1, (int)($product->stock ?? 1)) }}"
-                       value="1"
-                       class="w-20 border rounded px-2 py-1" />
+            <div class="mb-6 flex items-center gap-3">
+                <label for="qty-{{ $product->id }}" class="text-sm">
+                    Qty
+                </label>
+
+                <input
+                    id="qty-{{ $product->id }}"
+                    type="number"
+                    min="1"
+                    max="{{ max(1, (int) ($product->stock ?? 1)) }}"
+                    value="1"
+                    class="w-20 rounded border px-2 py-1"
+                />
+
                 <button
-                    class="add-to-cart bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded transition"
+                    type="button"
+                    class="add-to-cart rounded bg-green-600 px-4 py-2 text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
                     data-id="{{ $product->id }}"
                     data-qty-input="#qty-{{ $product->id }}"
-                    @if(($product->stock ?? 0) <= 0) disabled @endif
+                    @disabled(!$inStock)
                 >
                     Add to Cart
                 </button>
             </div>
 
-            {{-- Wishlist toggle (works with/without JS) --}}
-@auth
-    @php
-        // mark active without extra queries if controller passed it
-        $inWishlist = $inWishlist
-            ?? (isset($wishlistProducts) ? in_array($product->id, (array)$wishlistProducts) : false);
-    @endphp
+            {{-- Wishlist --}}
+            @auth
+                <form action="{{ route('wishlist.toggle', $product->id) }}" method="POST" class="inline wishlist-fallback-form">
+                    @csrf
 
-    <form action="{{ route('wishlist.toggle', $product->id) }}" method="POST" class="inline wishlist-fallback-form">
-        @csrf
-        <button
-            class="wishlist-btn text-pink-600 hover:underline"
-            data-id="{{ $product->id }}"
-            data-in="{{ $inWishlist ? '1' : '0' }}"
-            type="submit"
-            aria-pressed="{{ $inWishlist ? 'true' : 'false' }}"
-            title="{{ $inWishlist ? 'Remove from wishlist' : 'Add to wishlist' }}"
-        >
-            {!! $inWishlist ? '❤️ In wishlist (click to remove)' : '🤍 Add to Wishlist' !!}
-        </button>
-    </form>
-@else
-    <a href="{{ route('login') }}" class="text-pink-600 hover:underline">🤍 Add to Wishlist</a>
-@endauth
+                    <button
+                        type="submit"
+                        class="wishlist-btn text-pink-600 hover:underline {{ $inWishlist ? 'is-active' : '' }}"
+                        data-id="{{ $product->id }}"
+                        data-in="{{ $inWishlist ? '1' : '0' }}"
+                        data-mode="toggle"
+                        aria-pressed="{{ $inWishlist ? 'true' : 'false' }}"
+                        title="{{ $inWishlist ? 'Remove from wishlist' : 'Add to wishlist' }}"
+                    >
+                        {!! $inWishlist ? '❤️ In wishlist (click to remove)' : '🤍 Add to Wishlist' !!}
+                    </button>
+                </form>
+            @else
+                <a href="{{ route('login') }}" class="text-pink-600 hover:underline">
+                    🤍 Add to Wishlist
+                </a>
+            @endauth
 
-            <div class="mt-6 prose max-w-none">
+            <div class="prose mt-6 max-w-none">
                 {!! nl2br(e($product->description ?? '')) !!}
             </div>
         </div>
     </div>
 
-    {{-- Recommended / Related (optional placeholder you can replace) --}}
+    {{-- Related products --}}
     @if(isset($related) && $related->count())
-        <h2 class="mt-10 mb-4 text-xl font-bold">You may also like</h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+        <h2 class="mt-10 mb-4 text-xl font-bold">
+            You may also like
+        </h2>
+
+        <div class="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
             @foreach($related as $rel)
-                @include('products._card', ['product' => $rel])
+                @include('products.partials._card', [
+                    'product' => $rel,
+                    'wishlistProducts' => $wishlistProducts ?? [],
+                ])
             @endforeach
         </div>
     @endif
