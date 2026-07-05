@@ -16,7 +16,7 @@
     </ul>
 
     <h2 class="text-2xl font-semibold mt-6 mb-2">How to Return</h2>
-    <p class="mb-4">To initiate a return, please contact our support team at <a href="mailto:support@deluxeplus.com" class="text-blue-600 underline">support@deluxeplus.com</a> with your order details.</p>
+    <p class="mb-4">To initiate a return, please contact our support team at <a href="mailto:info@alreemexpo.com" class="text-blue-600 underline">info@alreemexpo.com</a> with your order details.</p>
 
     <h2 class="text-2xl font-semibold mt-6 mb-2">Refunds</h2>
     <p class="mb-4">Once your return is received and inspected, we will notify you of the approval or rejection of your refund. Approved refunds will be processed within 5-7 business days to your original payment method.</p>
@@ -24,6 +24,6 @@
     <h2 class="text-2xl font-semibold mt-6 mb-2">Exchanges</h2>
     <p class="mb-4">If you wish to exchange a product, please contact our support team to discuss available options.</p>
 
-    <p class="mt-6">For any questions regarding returns, feel free to reach out to us at <a href="mailto:support@deluxeplus.com" class="text-blue-600 underline">support@deluxeplus.com</a>.</p>
+    <p class="mt-6">For any questions regarding returns, feel free to reach out to us at <a href="mailto:info@alreemexpo.com" class="text-blue-600 underline">info@alreemexpo.com</a>.</p>
 </div>
 @endsection

@@ -36,6 +36,11 @@ use App\Http\Controllers\SitemapController;
 // Homepage
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
+//support page
+Route::view('/support', 'support')->name('support');
+
+//shipping page
+Route::view('/shipping', 'shipping')->name('shipping');
 // About page
 Route::get('/about', fn () => view('about'))->name('about');
 

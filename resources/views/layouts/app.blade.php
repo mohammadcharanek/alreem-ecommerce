@@ -7,15 +7,15 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     {{-- SEO: defaults can be overridden per-view with @section(...) --}}
-    <meta name="description" content="@yield('meta_description', 'Deluxe Plus — premium dental & medical supplies. Shop quality brands with great service and fast shipping.')">
+    <meta name="description" content="@yield('meta_description', 'Al Reem Expo specializes in supplying premium imported products from around the world.')">
     <meta name="robots" content="@yield('robots', 'index,follow')">
     <link rel="canonical" href="@yield('canonical', url()->current())">
 
     {{-- Open Graph / Twitter --}}
     <meta property="og:type" content="@yield('og_type', 'website')">
-    <meta property="og:site_name" content="Deluxe Plus">
-    <meta property="og:title" content="@yield('og_title', trim($__env->yieldContent('title', 'Deluxe Plus')))">
-    <meta property="og:description" content="@yield('og_description', trim($__env->yieldContent('meta_description', 'Deluxe Plus — premium dental & medical supplies.')))">
+    <meta property="og:site_name" content="Al Reem Expo">
+    <meta property="og:title" content="@yield('og_title', trim($__env->yieldContent('title', 'Al Reem Expo')))">
+    <meta property="og:description" content="@yield('og_description', trim($__env->yieldContent('meta_description', 'Al Reem Expo specializes in supplying premium imported products from around the world.')))">
     <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:image" content="@yield('og_image', asset('images/og-default.jpg'))">
     <meta name="twitter:card" content="summary_large_image">
