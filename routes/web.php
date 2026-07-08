@@ -26,7 +26,7 @@ use App\Http\Controllers\Admin\{
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\SitemapController;
-
+use App\Services\TwilioService;
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -35,6 +35,16 @@ use App\Http\Controllers\SitemapController;
 
 // Homepage
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+//test twilio
+Route::get('/test-twilio', function (TwilioService $twilio) {
+    $sent = $twilio->sendAdminSms('Test message from Laravel Al Reem Expo.');
+
+    return $sent ? 'Twilio SMS sent.' : 'Twilio SMS failed. Check laravel.log.';
+});
+
+//faq
+Route::view('/faq', 'pages.faq')->name('faq');
 
 //support page
 Route::view('/support', 'support')->name('support');

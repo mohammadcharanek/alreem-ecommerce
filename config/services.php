@@ -13,12 +13,13 @@ return [
     | a conventional file to locate the various service credentials.
     |
     */
-    'twilio' => [
+'twilio' => [
     'sid' => env('TWILIO_SID'),
     'token' => env('TWILIO_AUTH_TOKEN'),
-    'whatsapp_from' => env('TWILIO_WHATSAPP_FROM'),
-    'whatsapp_to' => env('TWILIO_WHATSAPP_TO'),
+    'whatsapp_from' => env('TWILIO_WHATSAPP_FROM', 'whatsapp:+14155238886'),
+    'admin_whatsapp' => env('ADMIN_WHATSAPP_NUMBER'),
 ],
+
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],

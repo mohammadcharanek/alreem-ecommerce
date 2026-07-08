@@ -118,6 +118,22 @@
             </div>
         </div>
 
+        {{-- Phone Number --}}
+<div class="mb-4">
+    <label class="block font-medium mb-1" for="phone">Phone Number</label>
+    <input
+        type="text"
+        name="phone"
+        id="phone"
+        value="{{ old('phone', auth()->user()->phone ?? '') }}"
+        placeholder="03 123 456"
+        class="w-full border rounded px-3 py-2"
+    >
+    @error('phone')
+        <span class="text-red-600 text-sm">{{ $message }}</span>
+    @enderror
+</div>
+
         {{-- Shipping Address --}}
         <div class="mb-4">
             <label class="block font-medium mb-1" for="shipping_address">Shipping Address</label>
