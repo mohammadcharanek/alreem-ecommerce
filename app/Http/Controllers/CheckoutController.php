@@ -266,19 +266,68 @@ class CheckoutController extends Controller
     }
 
     /**
-     * Send order confirmation email.
+     * Send order confirmation emails synchronously.
+     *
+     * Sending synchronously here makes SMTP or template failures visible
+     * immediately in laravel.log instead of hiding them in a queue worker.
      */
     private function sendOrderEmail(Order $order): void
     {
-        try {
-            if ($order->user && $order->user->email) {
-                Mail::to($order->user->email)
-                    ->cc('deluxeplusmohammad@gmail.com')
-                    ->queue(new PurchaseConfirmation($order));
-            }
-        } catch (\Throwable $e) {
-            Log::error('Email send failed', [
+        $order->loadMissing(['user', 'items.product']);
+
+        $customerEmail = $order->user?->email;
+        $adminEmail = config('mail.admin_address');
+
+        if (! $customerEmail) {
+            Log::warning('Customer order email skipped: customer email is missing', [
                 'order_id' => $order->id,
+                'user_id' => $order->user_id,
+            ]);
+        } else {
+            try {
+                Mail::to($customerEmail)->send(new PurchaseConfirmation($order));
+
+                Log::info('Customer order confirmation email sent', [
+                    'order_id' => $order->id,
+                    'email' => $customerEmail,
+                ]);
+            } catch (\Throwable $e) {
+                Log::error('Customer order confirmation email failed', [
+                    'order_id' => $order->id,
+                    'email' => $customerEmail,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        if (! $adminEmail) {
+            Log::warning('Admin order email skipped: MAIL_ADMIN_ADDRESS is missing', [
+                'order_id' => $order->id,
+            ]);
+
+            return;
+        }
+
+        if ($customerEmail && strcasecmp($customerEmail, $adminEmail) === 0) {
+            Log::info('Admin order email skipped because admin and customer addresses match', [
+                'order_id' => $order->id,
+                'email' => $adminEmail,
+            ]);
+
+            return;
+        }
+
+        try {
+            Mail::to($adminEmail)->send(new PurchaseConfirmation($order, true));
+
+            Log::info('Admin order notification email sent', [
+                'order_id' => $order->id,
+                'email' => $adminEmail,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Admin order notification email failed', [
+                'order_id' => $order->id,
+                'email' => $adminEmail,
                 'error' => $e->getMessage(),
             ]);
         }
