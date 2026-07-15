@@ -13,7 +13,6 @@ use App\Models\ProductImage;
 use App\Models\Vendor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -31,145 +30,396 @@ class ProductController extends Controller
      * FRONTEND PRODUCT PAGES
      * ============================================================ */
 
-    // Public product listing with validated search + sort
     public function index(Request $request)
     {
-        // Validate query params gracefully (avoid 422 on GET)
-        $validator = Validator::make($request->query(), [
-            'q'    => 'nullable|string|max:100',
-            // accept both "new" (used in your blade) and "latest" (alias)
-            'sort' => 'nullable|in:new,latest,price_asc,price_desc,name_asc,name_desc,rating_desc',
-        ]);
-
-        $q    = null;
-        $sort = 'name_asc'; // default
-
-        if ($validator->fails()) {
-            // Sanitize fallback
-            $rawQ   = $request->query('q');
-            $q      = is_string($rawQ) ? mb_substr($rawQ, 0, 100) : null;
-            $rawSort = $request->query('sort', $sort);
-            $allowed = ['new','latest','price_asc','price_desc','name_asc','name_desc','rating_desc'];
-            if (in_array($rawSort, $allowed, true)) {
-                $sort = $rawSort;
-            }
-        } else {
-            $data = $validator->validated();
-            $q    = $data['q']    ?? null;
-            $sort = $data['sort'] ?? $sort;
-        }
-
-        // Normalize "new" -> "latest"
-        if ($sort === 'new') {
-            $sort = 'latest';
-        }
-
-        $query = Product::with(['category', 'images', 'brand'])
-            ->where('is_active', true);
-
-        if ($q) {
-            $query->where(function ($w) use ($q) {
-                $w->where('name', 'like', "%{$q}%")
-                  ->orWhere('sku', 'like', "%{$q}%")
-                  ->orWhere('description', 'like', "%{$q}%");
-            });
-        }
-
-        switch ($sort) {
-            case 'latest':
-                $query->orderByDesc('created_at')->orderBy('id');
-                break;
-            case 'price_asc':
-                $query->orderBy('price')->orderBy('id');
-                break;
-            case 'price_desc':
-                $query->orderByDesc('price')->orderBy('id');
-                break;
-            case 'name_desc':
-                $query->orderByDesc('name')->orderBy('id');
-                break;
-            case 'rating_desc':
-                $query->orderByRaw('COALESCE(rating, 0) DESC')->orderBy('name');
-                break;
-            case 'name_asc':
-            default:
-                $query->orderBy('name')->orderBy('id');
-                break;
-        }
-
-        $products   = $query->paginate(8)->appends(['q' => $q, 'sort' => $sort]);
-        $categories = Category::with('children.children')->orderBy('name')->get();
-        $brands     = Brand::orderBy('name')->get();
-
-        return view('products.index', compact('products', 'categories', 'brands', 'q', 'sort'));
+        return $this->renderProductListing($request);
     }
 
-    // ✅ Route-model binding by slug: /p/{product:slug}
+    // Route-model binding by slug: /p/{product:slug}
     public function show(Product $product)
     {
-        $product->load(['images', 'category', 'brand']);
+        $product->load([
+            'category:id,name,slug',
+            'brand:id,name,slug',
+            'vendor:id,name,slug',
+            'images' => fn ($query) => $query
+                ->select('id', 'product_id', 'image', 'alt', 'is_primary', 'sort_order')
+                ->ordered(),
+        ]);
+
         return view('products.show', compact('product'));
     }
 
-    public function productsByCategory($slug)
+    public function productsByCategory(Request $request, string $slug)
     {
-        $category = Category::with('children.children')->where('slug', $slug)->firstOrFail();
+        $category = Category::query()
+            ->select('id', 'name', 'slug', 'parent_id')
+            ->where('slug', $slug)
+            ->firstOrFail();
 
-        // collect this category + all children + grandchildren
-        $categoryIds = collect([$category->id]);
-        foreach ($category->children as $child) {
-            $categoryIds->push($child->id);
-            foreach ($child->children as $grandchild) {
-                $categoryIds->push($grandchild->id);
-            }
-        }
-
-        $products = Product::with(['category', 'images', 'brand'])
-            ->whereIn('category_id', $categoryIds)
-            ->where('is_active', true)
-            ->paginate(12);
-
-        $categories = Category::with('children.children')->orderBy('name')->get();
-        $brands     = Brand::orderBy('name')->get();
-
-        return view('products.index', compact('products', 'categories', 'brands', 'category'));
+        return $this->renderProductListing($request, categoryContext: $category);
     }
 
-    public function byBrand(string $brandSlug)
+    public function byBrand(Request $request, string $brandSlug)
     {
-        $brand = Brand::where('slug', $brandSlug)->firstOrFail();
+        $brand = Brand::query()
+            ->select('id', 'name', 'slug')
+            ->where('slug', $brandSlug)
+            ->firstOrFail();
 
-        $products = Product::with(['category', 'images', 'brand'])
-            ->where('is_active', true)
-            ->where('brand_id', $brand->id)
-            ->latest('id')
+        return $this->renderProductListing($request, brandContext: $brand);
+    }
+
+    public function productsByVendor(Request $request, Vendor $vendor)
+    {
+        return $this->renderProductListing($request, vendorContext: $vendor);
+    }
+
+    /**
+     * Build the public product listing for the main page and contextual
+     * category, brand, and vendor routes.
+     */
+    private function renderProductListing(
+        Request $request,
+        ?Category $categoryContext = null,
+        ?Brand $brandContext = null,
+        ?Vendor $vendorContext = null,
+    ) {
+        $allCategories = Category::query()
+            ->select('id', 'name', 'slug', 'parent_id')
+            ->orderBy('name')
+            ->get();
+
+        $brands = Brand::query()
+            ->select('id', 'name', 'slug')
+            ->orderBy('name')
+            ->get();
+
+        $vendors = Vendor::query()
+            ->select('id', 'name', 'slug')
+            ->orderBy('name')
+            ->get();
+
+        $q = trim((string) $request->query('q', ''));
+        $q = mb_substr($q, 0, 100);
+
+        $allowedSorts = [
+            'recommended',
+            'new',
+            'latest',
+            'price_asc',
+            'price_desc',
+            'name_asc',
+            'name_desc',
+            'rating_desc',
+        ];
+
+        $sort = (string) $request->query('sort', 'recommended');
+        $sort = in_array($sort, $allowedSorts, true) ? $sort : 'recommended';
+        $sort = $sort === 'new' ? 'latest' : $sort;
+
+        $stockFilter = (string) $request->query('stock', '');
+        $stockFilter = in_array($stockFilter, ['in_stock', 'out_of_stock'], true)
+            ? $stockFilter
+            : '';
+
+        $selectedCategoryIds = $this->normalizeIdList(
+            $request->query('category', []),
+            $allCategories->pluck('id')
+        );
+
+        $selectedBrandIds = $this->normalizeIdList(
+            $request->query('brand', []),
+            $brands->pluck('id')
+        );
+
+        $selectedVendorIds = $this->normalizeIdList(
+            $request->query('vendor', []),
+            $vendors->pluck('id')
+        );
+
+        $minPrice = $this->normalizeMoney($request->query('min_price'));
+        $maxPrice = $this->normalizeMoney($request->query('max_price'));
+
+        if ($minPrice !== null && $maxPrice !== null && $minPrice > $maxPrice) {
+            [$minPrice, $maxPrice] = [$maxPrice, $minPrice];
+        }
+
+        $forcedCategoryIds = $categoryContext
+            ? $this->categoryAndDescendantIds($allCategories, $categoryContext->id)
+            : [];
+
+        $categoryIdsForQuery = $this->combineSelectedAndForcedIds(
+            $selectedCategoryIds,
+            $forcedCategoryIds
+        );
+
+        $brandIdsForQuery = $this->combineSelectedAndForcedIds(
+            $selectedBrandIds,
+            $brandContext ? [(int) $brandContext->id] : []
+        );
+
+        $vendorIdsForQuery = $this->combineSelectedAndForcedIds(
+            $selectedVendorIds,
+            $vendorContext ? [(int) $vendorContext->id] : []
+        );
+
+        $effectivePriceSql = 'CASE WHEN discount_price IS NOT NULL AND discount_price > 0 AND discount_price < price THEN discount_price ELSE price END';
+
+        $query = Product::query()
+            ->active()
+            ->search($q ?: null)
+            ->with([
+                'category:id,name,slug',
+                'brand:id,name,slug',
+                'vendor:id,name,slug',
+                'images' => fn ($imageQuery) => $imageQuery
+                    ->select('id', 'product_id', 'image', 'alt', 'is_primary', 'sort_order'),
+            ]);
+
+        if ($categoryIdsForQuery !== null) {
+            $categoryIdsForQuery
+                ? $query->whereIn('category_id', $categoryIdsForQuery)
+                : $query->whereRaw('1 = 0');
+        }
+
+        if ($brandIdsForQuery !== null) {
+            $brandIdsForQuery
+                ? $query->whereIn('brand_id', $brandIdsForQuery)
+                : $query->whereRaw('1 = 0');
+        }
+
+        if ($vendorIdsForQuery !== null) {
+            $vendorIdsForQuery
+                ? $query->whereIn('vendor_id', $vendorIdsForQuery)
+                : $query->whereRaw('1 = 0');
+        }
+
+        if ($stockFilter === 'in_stock') {
+            $query->where('stock', '>', 0);
+        } elseif ($stockFilter === 'out_of_stock') {
+            $query->where('stock', '<=', 0);
+        }
+
+        if ($minPrice !== null) {
+            $query->whereRaw("{$effectivePriceSql} >= ?", [$minPrice]);
+        }
+
+        if ($maxPrice !== null) {
+            $query->whereRaw("{$effectivePriceSql} <= ?", [$maxPrice]);
+        }
+
+        match ($sort) {
+            'latest' => $query
+                ->orderByDesc('created_at')
+                ->orderByDesc('id'),
+            'price_asc' => $query
+                ->orderByRaw("{$effectivePriceSql} ASC")
+                ->orderBy('name'),
+            'price_desc' => $query
+                ->orderByRaw("{$effectivePriceSql} DESC")
+                ->orderBy('name'),
+            'name_asc' => $query
+                ->orderBy('name')
+                ->orderBy('id'),
+            'name_desc' => $query
+                ->orderByDesc('name')
+                ->orderBy('id'),
+            'rating_desc' => $query
+                ->orderByRaw('COALESCE(rating, 0) DESC')
+                ->orderBy('name'),
+            default => $query
+                ->orderByDesc('featured')
+                ->orderByDesc('is_new')
+                ->orderByRaw('COALESCE(rating, 0) DESC')
+                ->orderBy('name'),
+        };
+
+        $products = $query
             ->paginate(12)
             ->withQueryString();
 
-        $categories = Category::with('children.children')->orderBy('name')->get();
-        $brands     = Brand::orderBy('name')->get();
+        $wishlistProducts = [];
+
+        if (auth()->check() && $products->isNotEmpty()) {
+            $wishlistProducts = DB::table('wishlists')
+                ->where('user_id', auth()->id())
+                ->whereIn('product_id', $products->getCollection()->pluck('id'))
+                ->pluck('product_id')
+                ->map(static fn ($id) => (int) $id)
+                ->all();
+        }
+
+        $categoryOptions = $this->buildCategoryOptions($allCategories);
+
+        $filterLabels = [
+            'categories' => $allCategories
+                ->whereIn('id', $selectedCategoryIds)
+                ->pluck('name', 'id')
+                ->all(),
+            'brands' => $brands
+                ->whereIn('id', $selectedBrandIds)
+                ->pluck('name', 'id')
+                ->all(),
+            'vendors' => $vendors
+                ->whereIn('id', $selectedVendorIds)
+                ->pluck('name', 'id')
+                ->all(),
+        ];
+
+        $activeFilterCount = ($q !== '' ? 1 : 0)
+            + count($selectedCategoryIds)
+            + count($selectedBrandIds)
+            + count($selectedVendorIds)
+            + ($stockFilter !== '' ? 1 : 0)
+            + (($minPrice !== null || $maxPrice !== null) ? 1 : 0);
 
         return view('products.index', [
-            'products'   => $products,
-            'categories' => $categories,
-            'brands'     => $brands,
-            'brand'      => $brand,
+            'products' => $products,
+            'categoryOptions' => $categoryOptions,
+            'brands' => $brands,
+            'vendors' => $vendors,
+            'q' => $q,
+            'sort' => $sort,
+            'stockFilter' => $stockFilter,
+            'minPrice' => $minPrice,
+            'maxPrice' => $maxPrice,
+            'selectedCategoryIds' => $selectedCategoryIds,
+            'selectedBrandIds' => $selectedBrandIds,
+            'selectedVendorIds' => $selectedVendorIds,
+            'filterLabels' => $filterLabels,
+            'activeFilterCount' => $activeFilterCount,
+            'wishlistProducts' => $wishlistProducts,
+            'clearFiltersUrl' => url()->current(),
+            'category' => $categoryContext,
+            'brand' => $brandContext,
+            'vendor' => $vendorContext,
         ]);
     }
 
-    public function productsByVendor($vendorId)
+    private function normalizeIdList(mixed $value, \Illuminate\Support\Collection $validIds): array
     {
-        $vendor = Vendor::findOrFail($vendorId);
+        $values = is_array($value)
+            ? $value
+            : (($value === null || $value === '') ? [] : [$value]);
 
-        $products = Product::with(['category', 'images', 'brand'])
-            ->where('vendor_id', $vendor->id)
-            ->where('is_active', true)
-            ->paginate(12);
+        $validLookup = $validIds
+            ->map(static fn ($id) => (int) $id)
+            ->flip();
 
-        $categories = Category::orderBy('name')->get();
-        $brands     = Brand::orderBy('name')->get();
+        return collect($values)
+            ->filter(static fn ($id) => filter_var($id, FILTER_VALIDATE_INT) !== false)
+            ->map(static fn ($id) => (int) $id)
+            ->filter(static fn ($id) => $validLookup->has($id))
+            ->unique()
+            ->values()
+            ->all();
+    }
 
-        return view('products.index', compact('products', 'categories', 'brands', 'vendor'));
+    private function normalizeMoney(mixed $value): ?float
+    {
+        if ($value === null || $value === '' || !is_numeric($value)) {
+            return null;
+        }
+
+        return round(max(0, (float) $value), 2);
+    }
+
+    private function combineSelectedAndForcedIds(array $selectedIds, array $forcedIds): ?array
+    {
+        if (!$selectedIds && !$forcedIds) {
+            return null;
+        }
+
+        if (!$forcedIds) {
+            return $selectedIds;
+        }
+
+        if (!$selectedIds) {
+            return $forcedIds;
+        }
+
+        return array_values(array_intersect($selectedIds, $forcedIds));
+    }
+
+    private function categoryAndDescendantIds(
+        \Illuminate\Support\Collection $categories,
+        int $categoryId,
+    ): array {
+        $childrenByParent = $categories->groupBy(
+            static fn (Category $category) => (int) ($category->parent_id ?? 0)
+        );
+
+        $ids = [];
+        $stack = [$categoryId];
+
+        while ($stack) {
+            $currentId = (int) array_pop($stack);
+
+            if (in_array($currentId, $ids, true)) {
+                continue;
+            }
+
+            $ids[] = $currentId;
+
+            foreach ($childrenByParent->get($currentId, collect()) as $child) {
+                $stack[] = (int) $child->id;
+            }
+        }
+
+        return $ids;
+    }
+
+    private function buildCategoryOptions(
+        \Illuminate\Support\Collection $categories,
+    ): \Illuminate\Support\Collection {
+        $childrenByParent = $categories->groupBy(
+            static fn (Category $category) => (int) ($category->parent_id ?? 0)
+        );
+
+        $options = collect();
+        $visited = [];
+
+        $appendChildren = function (int $parentId, int $depth = 0) use (
+            &$appendChildren,
+            &$visited,
+            $childrenByParent,
+            $options,
+        ): void {
+            foreach ($childrenByParent->get($parentId, collect()) as $category) {
+                $categoryId = (int) $category->id;
+
+                if (isset($visited[$categoryId])) {
+                    continue;
+                }
+
+                $visited[$categoryId] = true;
+                $options->push([
+                    'id' => $categoryId,
+                    'name' => $category->name,
+                    'slug' => $category->slug,
+                    'depth' => $depth,
+                ]);
+
+                $appendChildren($categoryId, $depth + 1);
+            }
+        };
+
+        $appendChildren(0);
+
+        // Keep orphaned categories visible instead of silently dropping them.
+        foreach ($categories as $category) {
+            if (!isset($visited[(int) $category->id])) {
+                $options->push([
+                    'id' => (int) $category->id,
+                    'name' => $category->name,
+                    'slug' => $category->slug,
+                    'depth' => 0,
+                ]);
+            }
+        }
+
+        return $options;
     }
 
     /* ============================================================

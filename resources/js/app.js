@@ -233,12 +233,20 @@ async function handleQuantityChange(e) {
 
 function updateWishlistButton(btn, active) {
     const isTextButton = btn.classList.contains('text-pink-600');
+    const label = active ? 'Remove from wishlist' : 'Add to wishlist';
+    const icon = btn.querySelector('[data-wishlist-icon]');
 
     btn.classList.toggle('is-active', active);
     btn.dataset.in = active ? '1' : '0';
     btn.dataset.mode = 'toggle';
     btn.setAttribute('aria-pressed', active ? 'true' : 'false');
-    btn.title = active ? 'Remove from wishlist' : 'Add to wishlist';
+    btn.setAttribute('aria-label', label);
+    btn.title = label;
+
+    if (icon) {
+        icon.textContent = active ? '❤️' : '🤍';
+        return;
+    }
 
     btn.innerHTML = active
         ? (isTextButton ? '❤️ In wishlist (click to remove)' : '❤️')

@@ -200,7 +200,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', AdminMiddleware::cla
 Route::get('/send-test-email', function () {
     try {
         Mail::raw('This is a test email sent from Laravel using Gmail SMTP.', function ($message) {
-            $message->to('deluxeplusmohammad@gmail.com')->subject('Laravel Gmail SMTP Test');
+            $message->to('alreemexpo1@gmail.com')->subject('Laravel Gmail SMTP Test');
         });
         return '✅ Email sent successfully!';
     } catch (\Exception $e) {

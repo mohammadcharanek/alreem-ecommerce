@@ -62,10 +62,7 @@ class Product extends Model
 
     public function images(): HasMany
     {
-        // If you added ProductImage::scopeOrdered(), uncomment the next line:
-        // return $this->hasMany(ProductImage::class)->ordered();
-
-        return $this->hasMany(ProductImage::class)->orderBy('id'); // safe default ordering
+        return $this->hasMany(ProductImage::class)->ordered();
     }
 
     public function wishlistedByUsers(): BelongsToMany
@@ -90,11 +87,26 @@ class Product extends Model
 
     /* -------------------------------- Accessors ------------------------------ */
 
-    // Prefer this everywhere in views for price display
+    // Prefer this everywhere in views for price display.
     public function getDisplayPriceAttribute(): float
     {
-        $hasDiscount = !is_null($this->discount_price) && $this->discount_price > 0;
-        return (float) ($hasDiscount ? $this->discount_price : $this->price);
+        return (float) ($this->has_discount ? $this->discount_price : $this->price);
+    }
+
+    public function getHasDiscountAttribute(): bool
+    {
+        return !is_null($this->discount_price)
+            && (float) $this->discount_price > 0
+            && (float) $this->discount_price < (float) $this->price;
+    }
+
+    public function getDiscountPercentageAttribute(): int
+    {
+        if (!$this->has_discount || (float) $this->price <= 0) {
+            return 0;
+        }
+
+        return (int) round((1 - ((float) $this->discount_price / (float) $this->price)) * 100);
     }
 
     public function getIsInStockAttribute(): bool
@@ -109,8 +121,11 @@ class Product extends Model
 
     public function getThumbnailUrlAttribute(): ?string
     {
-        $path = $this->images()->value('image'); // first image path or null
-        return $path ? asset('storage/' . ltrim($path, '/')) : null;
+        $image = $this->relationLoaded('images')
+            ? $this->images->first()
+            : $this->images()->first();
+
+        return $image?->url;
     }
 
     /* ---------------------------------- Scopes ------------------------------- */

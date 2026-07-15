@@ -21,7 +21,7 @@ class ContactController extends Controller
     ]);
 
     Mail::raw($data['message'], function ($message) use ($data) {
-        $message->to('deluxeplusmohammad@gmail.com')
+        $message->to('alreemexpo1@gmail.com')
                 ->subject('Contact Form: ' . $data['subject'])
                 ->replyTo($data['email'], $data['name']);
     });

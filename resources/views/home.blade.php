@@ -1,314 +1,1110 @@
 @extends('layouts.app')
 
 @section('title', 'Alreem | Global Import & Export Trading Company')
-@section('meta_description', 'Alreem is a global import and export trading company specializing in wholesale sourcing, international logistics, and supply chain solutions across multiple industries.')
+
+@section(
+    'meta_description',
+    'Alreem is a global import and export trading company specializing in wholesale sourcing, international logistics, and supply chain solutions across multiple industries.'
+)
+
 @section('canonical', route('home'))
 @section('robots', 'index,follow')
 
 @section('content')
 
-<div class="min-h-screen bg-gradient-to-br from-[#F8F6F0] via-[#FCFBF8] to-[#F4F1E8]">
+<style>
+    [x-cloak] {
+        display: none !important;
+    }
 
-    <!-- HERO SECTION -->
-    <section class="relative overflow-hidden">
-        <div class="max-w-7xl mx-auto px-4 py-12 sm:py-16 lg:py-24">
+    /*
+     * Mobile product row:
+     * keep horizontal scrolling without displaying a distracting scrollbar.
+     */
+    .home-product-scroll {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
 
-            <div class="flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-12 mb-12 lg:mb-16">
+    .home-product-scroll::-webkit-scrollbar {
+        display: none;
+    }
 
-                <!-- LEFT -->
-                <div class="flex-1 text-center lg:text-left">
+    /*
+     * Persistent cart icon.
+     *
+     * The icon is generated with CSS instead of being placed inside the
+     * button markup. It therefore remains visible even when existing
+     * JavaScript changes button.innerHTML or button.textContent.
+     */
+    .home-cart-icon {
+        font-size: 0;
+        line-height: 0;
+    }
 
-                    <!-- Brand -->
-                    <div class="flex items-center justify-center lg:justify-start gap-4 mb-6">
-                        <img src="{{ Storage::url('logo.jpeg') }}"
-                             alt="Alreem Logo"
-                             class="w-16 h-16 rounded-2xl shadow-lg ring-2 ring-white object-cover">
+    .home-cart-icon::before {
+        content: "";
+        display: block;
+        width: 1.25rem;
+        height: 1.25rem;
+        background-color: currentColor;
 
-                        <div>
-                            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight">
-                                <span class="text-green-500">Al</span>
-                                <span class="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-800 bg-clip-text text-transparent">
-                                    Reem
-                                </span>
-                            </h1>
+        -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.9' d='M3 4h2l2.4 10.4A2 2 0 0 0 9.35 16h7.75a2 2 0 0 0 1.95-1.55L21 7H6M9 20h.01M19 20h.01M15 10h4m-2-2v4'/%3E%3C/svg%3E");
 
-                            <div class="mx-auto lg:mx-0 mt-2 w-24 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"></div>
+        mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.9' d='M3 4h2l2.4 10.4A2 2 0 0 0 9.35 16h7.75a2 2 0 0 0 1.95-1.55L21 7H6M9 20h.01M19 20h.01M15 10h4m-2-2v4'/%3E%3C/svg%3E");
+
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+
+        -webkit-mask-position: center;
+        mask-position: center;
+
+        -webkit-mask-size: contain;
+        mask-size: contain;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .home-motion {
+            scroll-behavior: auto !important;
+            transition-duration: 0.01ms !important;
+            animation-duration: 0.01ms !important;
+        }
+    }
+</style>
+
+<div class="min-h-screen bg-slate-50 text-slate-900">
+
+    {{-- ========================================================= --}}
+    {{-- HERO --}}
+    {{-- ========================================================= --}}
+    <section class="relative overflow-hidden border-b border-slate-200/80 bg-white">
+
+        {{-- Subtle background decoration --}}
+        <div
+            class="pointer-events-none absolute -left-32 top-0 h-80 w-80 rounded-full bg-blue-100/70 blur-3xl"
+            aria-hidden="true"
+        ></div>
+
+        <div
+            class="pointer-events-none absolute -right-32 bottom-0 h-80 w-80 rounded-full bg-indigo-100/60 blur-3xl"
+            aria-hidden="true"
+        ></div>
+
+        <div class="relative mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
+
+            <div class="grid items-center gap-10 lg:grid-cols-[1fr_1.08fr] lg:gap-14">
+
+                {{-- Hero content --}}
+                <div class="text-center lg:text-left">
+
+                    {{-- Brand --}}
+                    <div class="mb-6 flex items-center justify-center gap-3 lg:justify-start">
+                        <img
+                            src="{{ Storage::url('logo.jpeg') }}"
+                            alt="Alreem Expo logo"
+                            width="56"
+                            height="56"
+                            class="h-14 w-14 rounded-2xl object-cover shadow-sm ring-1 ring-slate-200"
+                        >
+
+                        <div class="text-left">
+                            <p class="text-lg font-bold leading-none text-slate-900">
+                                Alreem Expo
+                            </p>
+
+                            <p class="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
+                                Import &amp; Export
+                            </p>
                         </div>
                     </div>
 
-                    <h2 class="text-xl lg:text-2xl text-gray-700 font-medium mb-6 leading-relaxed">
-                        Global Import & Export • Wholesale Supply • International Trade Solutions
-                    </h2>
+                    <div
+                        class="mx-auto mb-5 inline-flex items-center gap-2 rounded-full
+                               border border-blue-200 bg-blue-50 px-3 py-1.5
+                               text-xs font-semibold text-blue-800 lg:mx-0"
+                    >
+                        <span class="h-2 w-2 rounded-full bg-green-500"></span>
+                        Global sourcing and wholesale supply
+                    </div>
 
-                    <p class="text-gray-600 text-base sm:text-lg mb-8 max-w-xl mx-auto lg:mx-0">
-                        We connect manufacturers, suppliers, and buyers worldwide with efficient sourcing,
-                        competitive wholesale pricing, and reliable logistics support.
+                    <h1
+                        class="mx-auto max-w-2xl text-4xl font-bold tracking-tight text-slate-950
+                               sm:text-5xl lg:mx-0 lg:text-6xl lg:leading-[1.08]"
+                    >
+                        Reliable products.
+                        <span class="text-blue-700">Global sourcing.</span>
+                        Better value.
+                    </h1>
+
+                    <p
+                        class="mx-auto mt-6 max-w-xl text-base leading-7 text-slate-600
+                               sm:text-lg lg:mx-0"
+                    >
+                        Discover carefully selected products supported by competitive pricing,
+                        dependable suppliers, and professional import and logistics experience.
                     </p>
 
-                    <!-- CTA -->
-                    <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                        <a href="{{ route('products.index') }}"
-                           class="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all">
-                            Explore Products
+                    {{-- Main actions --}}
+                    <div
+                        class="mt-8 flex flex-col items-stretch justify-center gap-3
+                               sm:flex-row sm:items-center lg:justify-start"
+                    >
+                        <a
+                            href="{{ route('products.index') }}"
+                            class="inline-flex min-h-12 w-full items-center justify-center gap-2
+                                   rounded-xl bg-blue-700 px-6 py-3 text-base font-semibold
+                                   text-white shadow-sm transition duration-200
+                                   hover:bg-blue-800 hover:shadow-md
+                                   focus:outline-none focus:ring-2 focus:ring-blue-500
+                                   focus:ring-offset-2 sm:w-auto"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                class="h-5 w-5"
+                                aria-hidden="true"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="M4 7h16M5.5 7l1 13h11l1-13M9 11v5M15 11v5M9 7V4h6v3"
+                                />
+                            </svg>
+
+                            Shop Products
                         </a>
 
-                        <a href="#categories"
-                           class="inline-flex items-center justify-center px-8 py-4 bg-white/70 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:border-indigo-400 hover:text-indigo-600 hover:bg-white transition">
+                        <a
+                            href="#categories"
+                            class="inline-flex min-h-12 w-full items-center justify-center gap-2
+                                   rounded-xl border border-slate-300 bg-white px-6 py-3
+                                   text-base font-semibold text-slate-700 shadow-sm
+                                   transition duration-200 hover:border-blue-300
+                                   hover:bg-blue-50 hover:text-blue-700
+                                   focus:outline-none focus:ring-2 focus:ring-blue-500
+                                   focus:ring-offset-2 sm:w-auto"
+                        >
                             Browse Categories
+
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                class="h-4 w-4"
+                                aria-hidden="true"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="m9 18 6-6-6-6"
+                                />
+                            </svg>
                         </a>
                     </div>
-                </div>
 
-                <!-- RIGHT FEATURES -->
-                <div class="flex-1 w-full max-w-md">
-                    <div class="grid gap-5">
+                    {{-- Small confidence points --}}
+                    <div
+                        class="mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2
+                               text-sm text-slate-600 lg:justify-start"
+                    >
+                        <span class="inline-flex items-center gap-2">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                class="h-4 w-4 text-green-600"
+                                aria-hidden="true"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="m5 12 4 4L19 6"
+                                />
+                            </svg>
 
-                        <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-5 sm:p-6 shadow-lg ring-1 ring-gray-100 hover:shadow-xl transition">
-                            <div class="flex gap-4 items-center">
-                                <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-xl">🌍</div>
-                                <div>
-                                    <h3 class="font-semibold text-gray-900">Global Sourcing</h3>
-                                    <p class="text-sm text-gray-600">International supplier network</p>
-                                </div>
-                            </div>
-                        </div>
+                            Verified suppliers
+                        </span>
 
-                        <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-5 sm:p-6 shadow-lg ring-1 ring-gray-100 hover:shadow-xl transition">
-                            <div class="flex gap-4 items-center">
-                                <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-xl">🚢</div>
-                                <div>
-                                    <h3 class="font-semibold text-gray-900">Logistics Support</h3>
-                                    <p class="text-sm text-gray-600">Fast and reliable shipping</p>
-                                </div>
-                            </div>
-                        </div>
+                        <span class="inline-flex items-center gap-2">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                class="h-4 w-4 text-green-600"
+                                aria-hidden="true"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="m5 12 4 4L19 6"
+                                />
+                            </svg>
 
-                        <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-5 sm:p-6 shadow-lg ring-1 ring-gray-100 hover:shadow-xl transition">
-                            <div class="flex gap-4 items-center">
-                                <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center text-xl">💰</div>
-                                <div>
-                                    <h3 class="font-semibold text-gray-900">Wholesale Pricing</h3>
-                                    <p class="text-sm text-gray-600">Competitive bulk rates</p>
-                                </div>
-                            </div>
-                        </div>
+                            Wholesale pricing
+                        </span>
 
+                        <span class="inline-flex items-center gap-2">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                class="h-4 w-4 text-green-600"
+                                aria-hidden="true"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="m5 12 4 4L19 6"
+                                />
+                            </svg>
+
+                            Responsive support
+                        </span>
                     </div>
                 </div>
 
+                {{-- Hero slideshow --}}
+                <div
+                    class="home-motion group relative overflow-hidden rounded-2xl
+                           border border-slate-200 bg-slate-100 shadow-xl
+                           sm:rounded-3xl"
+                    x-data="homeSlideshow()"
+                    x-init="start()"
+                    @mouseenter="pause()"
+                    @mouseleave="resume()"
+                    @focusin="pause()"
+                    @focusout="resume()"
+                >
+                    <div class="aspect-[16/10] sm:aspect-[1942/809]">
+                        <img
+                            :src="images[current]"
+                            :alt="`Alreem Expo promotional banner ${current + 1}`"
+                            width="1942"
+                            height="809"
+                            fetchpriority="high"
+                            class="h-full w-full object-cover"
+                        >
+                    </div>
+
+                    {{-- Soft image overlay --}}
+                    <div
+                        class="pointer-events-none absolute inset-0 bg-gradient-to-t
+                               from-slate-950/20 via-transparent to-transparent"
+                        aria-hidden="true"
+                    ></div>
+
+                    {{-- Previous --}}
+                    <button
+                        type="button"
+                        @click="previous(true)"
+                        aria-label="Show previous promotional banner"
+                        class="absolute left-3 top-1/2 inline-flex h-11 w-11
+                               -translate-y-1/2 items-center justify-center rounded-full
+                               bg-white/90 text-slate-800 shadow-md backdrop-blur-sm
+                               transition hover:bg-white
+                               focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            class="h-5 w-5"
+                            aria-hidden="true"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="m15 18-6-6 6-6"
+                            />
+                        </svg>
+                    </button>
+
+                    {{-- Next --}}
+                    <button
+                        type="button"
+                        @click="next(true)"
+                        aria-label="Show next promotional banner"
+                        class="absolute right-3 top-1/2 inline-flex h-11 w-11
+                               -translate-y-1/2 items-center justify-center rounded-full
+                               bg-white/90 text-slate-800 shadow-md backdrop-blur-sm
+                               transition hover:bg-white
+                               focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            class="h-5 w-5"
+                            aria-hidden="true"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="m9 18 6-6-6-6"
+                            />
+                        </svg>
+                    </button>
+
+                    {{-- Slide indicators --}}
+                    <div
+                        class="absolute bottom-4 left-0 right-0 flex items-center
+                               justify-center gap-2"
+                    >
+                        <template x-for="(image, index) in images" :key="index">
+                            <button
+                                type="button"
+                                @click="goTo(index)"
+                                class="h-2.5 rounded-full shadow-sm transition-all duration-200"
+                                :class="current === index
+                                    ? 'w-8 bg-white'
+                                    : 'w-2.5 bg-white/60 hover:bg-white'"
+                                :aria-label="`Show promotional banner ${index + 1}`"
+                                :aria-current="current === index ? 'true' : 'false'"
+                            ></button>
+                        </template>
+                    </div>
+                </div>
             </div>
 
-            <!-- HERO SLIDESHOW -->
-            <div class="relative w-full overflow-hidden rounded-2xl sm:rounded-3xl shadow-2xl ring-1 ring-black/5 bg-white"
-                 style="aspect-ratio: 1942 / 809;"
-                 x-data="slideshow()"
-                 x-init="start()">
-
-                <template x-for="(image, index) in images" :key="index">
-                    <div x-show="current === index"
-                         x-transition.opacity.duration.700ms
-                         class="absolute inset-0">
-                        <img :src="image"
-                             alt="Alreem import export banner"
-                             class="w-full h-full object-cover">
+            {{-- Trust strip --}}
+            <div
+                class="mt-10 grid overflow-hidden rounded-2xl border border-slate-200
+                       bg-white shadow-sm sm:grid-cols-2 lg:grid-cols-4"
+            >
+                <div class="flex items-center gap-3 border-b border-slate-200 p-4 sm:border-r">
+                    <div
+                        class="flex h-10 w-10 shrink-0 items-center justify-center
+                               rounded-xl bg-blue-50 text-blue-700"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            class="h-5 w-5"
+                            aria-hidden="true"
+                        >
+                            <circle cx="12" cy="12" r="9"></circle>
+                            <path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"></path>
+                        </svg>
                     </div>
-                </template>
 
-                <!-- Overlay -->
-                <div class="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-transparent pointer-events-none"></div>
+                    <div>
+                        <h2 class="text-sm font-semibold text-slate-900">
+                            Global Sourcing
+                        </h2>
 
-                <!-- Dots -->
-                <div class="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-2">
-                    <template x-for="(image, index) in images" :key="index">
-                        <button type="button"
-                                @click="current = index"
-                                class="h-2.5 rounded-full transition-all"
-                                :class="current === index ? 'w-8 bg-white' : 'w-2.5 bg-white/60 hover:bg-white'">
-                        </button>
-                    </template>
+                        <p class="mt-0.5 text-xs text-slate-500">
+                            Reliable supplier network
+                        </p>
+                    </div>
                 </div>
 
-            </div>
+                <div
+                    class="flex items-center gap-3 border-b border-slate-200 p-4
+                           sm:border-r lg:border-b-0"
+                >
+                    <div
+                        class="flex h-10 w-10 shrink-0 items-center justify-center
+                               rounded-xl bg-green-50 text-green-700"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            class="h-5 w-5"
+                            aria-hidden="true"
+                        >
+                            <path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z"></path>
+                            <circle cx="7" cy="18" r="2"></circle>
+                            <circle cx="18" cy="18" r="2"></circle>
+                        </svg>
+                    </div>
 
+                    <div>
+                        <h2 class="text-sm font-semibold text-slate-900">
+                            Shipping Support
+                        </h2>
+
+                        <p class="mt-0.5 text-xs text-slate-500">
+                            Dependable logistics assistance
+                        </p>
+                    </div>
+                </div>
+
+                <div
+                    class="flex items-center gap-3 border-b border-slate-200 p-4
+                           sm:border-b-0 sm:border-r"
+                >
+                    <div
+                        class="flex h-10 w-10 shrink-0 items-center justify-center
+                               rounded-xl bg-indigo-50 text-indigo-700"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            class="h-5 w-5"
+                            aria-hidden="true"
+                        >
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                    </div>
+
+                    <div>
+                        <h2 class="text-sm font-semibold text-slate-900">
+                            Wholesale Value
+                        </h2>
+
+                        <p class="mt-0.5 text-xs text-slate-500">
+                            Competitive bulk pricing
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3 p-4">
+                    <div
+                        class="flex h-10 w-10 shrink-0 items-center justify-center
+                               rounded-xl bg-amber-50 text-amber-700"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            class="h-5 w-5"
+                            aria-hidden="true"
+                        >
+                            <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path>
+                        </svg>
+                    </div>
+
+                    <div>
+                        <h2 class="text-sm font-semibold text-slate-900">
+                            Helpful Support
+                        </h2>
+
+                        <p class="mt-0.5 text-xs text-slate-500">
+                            Fast and professional responses
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
-    <!-- CATEGORIES -->
-    <section id="categories" class="py-12 sm:py-16">
-        <div class="max-w-7xl mx-auto px-4">
+    {{-- ========================================================= --}}
+    {{-- CATEGORIES --}}
+    {{-- ========================================================= --}}
+    <section id="categories" class="scroll-mt-24 py-12 sm:py-16 lg:py-20">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
-            <div class="flex items-end justify-between gap-4 mb-8">
+            <div class="mb-8 flex items-end justify-between gap-5">
                 <div>
-                    <p class="text-sm font-semibold text-blue-700 uppercase tracking-wide">Browse</p>
-                    <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Product Categories</h2>
+                    <p class="text-sm font-bold uppercase tracking-[0.16em] text-blue-700">
+                        Shop by category
+                    </p>
+
+                    <h2 class="mt-2 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+                        Find what you need faster
+                    </h2>
+
+                    <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
+                        Browse our main product categories and quickly reach the products
+                        most relevant to your needs.
+                    </p>
                 </div>
 
-                <a href="{{ route('products.index') }}"
-                   class="hidden sm:inline-flex text-sm font-semibold text-blue-700 hover:text-blue-900">
+                <a
+                    href="{{ route('products.index') }}"
+                    class="hidden shrink-0 items-center gap-1.5 text-sm font-semibold
+                           text-blue-700 transition hover:text-blue-900 sm:inline-flex"
+                >
                     View all products
+
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        class="h-4 w-4"
+                        aria-hidden="true"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="m9 18 6-6-6-6"
+                        />
+                    </svg>
                 </a>
             </div>
 
-            @php $cats = ($topCategories ?? collect()); @endphp
+            @php
+                $categories = $topCategories ?? collect();
+            @endphp
 
-            @if($cats->count())
-                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6">
-                    @foreach($cats as $cat)
-                        <a href="{{ route('products.byCategory', $cat->slug) }}"
-                           class="group bg-white/90 rounded-2xl shadow-sm hover:shadow-xl p-4 text-center ring-1 ring-gray-100 transition-all hover:-translate-y-1">
-
-                            <div class="h-20 flex items-center justify-center rounded-xl bg-gray-50">
-                                @if($cat->image)
-                                    <img src="{{ asset('storage/'.$cat->image) }}"
-                                         alt="{{ $cat->name }}"
-                                         class="max-h-full object-contain group-hover:scale-105 transition">
+            @if($categories->count())
+                <div
+                    class="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5
+                           md:grid-cols-4 lg:grid-cols-6"
+                >
+                    @foreach($categories as $category)
+                        <a
+                            href="{{ route('products.byCategory', $category->slug) }}"
+                            class="group flex min-w-0 flex-col overflow-hidden rounded-2xl
+                                   border border-slate-200 bg-white p-3 shadow-sm
+                                   transition duration-200 hover:-translate-y-1
+                                   hover:border-blue-200 hover:shadow-lg
+                                   focus:outline-none focus:ring-2 focus:ring-blue-500
+                                   focus:ring-offset-2 sm:p-4"
+                        >
+                            <div
+                                class="flex aspect-square items-center justify-center
+                                       overflow-hidden rounded-xl bg-slate-50"
+                            >
+                                @if($category->image)
+                                    <img
+                                        src="{{ asset('storage/' . $category->image) }}"
+                                        alt="{{ $category->name }}"
+                                        width="180"
+                                        height="180"
+                                        loading="lazy"
+                                        class="h-full w-full object-contain p-3
+                                               transition duration-300 group-hover:scale-105"
+                                    >
                                 @else
-                                    <div class="text-3xl text-gray-300">📦</div>
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="1.5"
+                                        class="h-10 w-10 text-slate-300 sm:h-12 sm:w-12"
+                                        aria-hidden="true"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            d="m21 8-9-5-9 5 9 5 9-5Z"
+                                        />
+
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            d="m3 8 9 5 9-5M3 12l9 5 9-5"
+                                        />
+                                    </svg>
                                 @endif
                             </div>
 
-                            <div class="mt-3 font-semibold text-sm sm:text-base text-gray-800 group-hover:text-blue-700 transition">
-                                {{ $cat->name }}
-                            </div>
+                            <h3
+                                class="mt-3 line-clamp-2 min-h-[40px] text-center
+                                       text-sm font-semibold leading-5 text-slate-800
+                                       transition group-hover:text-blue-700"
+                            >
+                                {{ $category->name }}
+                            </h3>
                         </a>
                     @endforeach
                 </div>
             @else
-                <div class="rounded-2xl bg-white p-6 text-gray-500 shadow-sm ring-1 ring-gray-100">
-                    No categories available yet.
+                <div
+                    class="rounded-2xl border border-dashed border-slate-300
+                           bg-white px-6 py-10 text-center"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        class="mx-auto h-10 w-10 text-slate-300"
+                        aria-hidden="true"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="m21 8-9-5-9 5 9 5 9-5Z"
+                        />
+
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="m3 8 9 5 9-5M3 12l9 5 9-5"
+                        />
+                    </svg>
+
+                    <p class="mt-3 font-medium text-slate-700">
+                        No categories are available yet.
+                    </p>
                 </div>
             @endif
 
+            <div class="mt-6 sm:hidden">
+                <a
+                    href="{{ route('products.index') }}"
+                    class="inline-flex min-h-12 w-full items-center justify-center
+                           rounded-xl border border-blue-200 bg-white px-4 py-3
+                           text-sm font-semibold text-blue-700 transition
+                           hover:bg-blue-50"
+                >
+                    View all products
+                </a>
+            </div>
         </div>
     </section>
 
-    <!-- LATEST PRODUCTS HORIZONTAL CAROUSEL -->
+    {{-- ========================================================= --}}
+    {{-- NEW ARRIVALS --}}
+    {{-- ========================================================= --}}
     @if(isset($newProducts) && $newProducts->count())
-    <section class="py-12 sm:py-16 bg-white">
-        <div class="max-w-7xl mx-auto px-4">
+        <section class="border-y border-slate-200 bg-white py-12 sm:py-16 lg:py-20">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
-            <div class="flex items-end justify-between gap-4 mb-8">
-                <div>
-                    <p class="text-sm font-semibold text-blue-700 uppercase tracking-wide">New arrivals</p>
-                    <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Latest Products</h2>
-                    <p class="mt-2 text-sm text-gray-600">
-                        Swipe on mobile or scroll horizontally to explore our newest products.
-                    </p>
+                <div class="mb-8 flex items-end justify-between gap-5">
+                    <div>
+                        <p class="text-sm font-bold uppercase tracking-[0.16em] text-blue-700">
+                            New arrivals
+                        </p>
+
+                        <h2 class="mt-2 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+                            Recently added products
+                        </h2>
+
+                        <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
+                            Explore our latest available products. Swipe on mobile or browse
+                            the complete grid on larger screens.
+                        </p>
+                    </div>
+
+                    <a
+                        href="{{ route('products.index') }}"
+                        class="hidden shrink-0 items-center gap-1.5 text-sm font-semibold
+                               text-blue-700 transition hover:text-blue-900 sm:inline-flex"
+                    >
+                        View all products
+
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            class="h-4 w-4"
+                            aria-hidden="true"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="m9 18 6-6-6-6"
+                            />
+                        </svg>
+                    </a>
                 </div>
 
-                <a href="{{ route('products.index') }}"
-                   class="hidden sm:inline-flex items-center justify-center rounded-xl border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 transition">
-                    View all
-                </a>
-            </div>
-
-            <div class="-mx-4 px-4 overflow-x-auto pb-4 snap-x snap-mandatory">
-                <div class="flex gap-4 sm:gap-6 min-w-full">
-
+                <div
+                    class="home-product-scroll home-motion -mx-4 flex snap-x
+                           snap-mandatory gap-4 overflow-x-auto px-4 pb-4
+                           sm:-mx-6 sm:px-6 md:mx-0 md:grid md:grid-cols-3
+                           md:gap-6 md:overflow-visible md:px-0 md:pb-0
+                           lg:grid-cols-4"
+                >
                     @foreach($newProducts as $product)
                         @php
-                            $img = optional($product->images->first());
-                            $imgUrl = $img?->image ? asset('storage/'.$img->image) : asset('images/placeholder.png');
-                            $hasDiscount = $product->discount_price && $product->discount_price < $product->price;
+                            $primaryImage = $product->images->firstWhere('is_primary', true)
+                                ?? $product->images->first();
+
+                            $imageUrl = $primaryImage?->image
+                                ? asset('storage/' . $primaryImage->image)
+                                : asset('images/placeholder.png');
+
+                            $price = (float) $product->price;
+                            $discountPrice = (float) $product->discount_price;
+
+                            $hasDiscount = $discountPrice > 0
+                                && $price > 0
+                                && $discountPrice < $price;
+
+                            $discountPercentage = $hasDiscount
+                                ? (int) round((($price - $discountPrice) / $price) * 100)
+                                : null;
+
+                            $stock = (int) ($product->stock ?? 0);
+                            $isOutOfStock = $stock <= 0;
+                            $isLowStock = !$isOutOfStock && $stock <= 5;
                         @endphp
 
-                        <a href="{{ route('products.show', $product) }}"
-                           class="group snap-start shrink-0 w-[78%] sm:w-[45%] md:w-[31%] lg:w-[23%] bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1">
+                        <article
+                            class="group flex w-[82vw] max-w-[19rem] shrink-0 snap-start
+                                   flex-col overflow-hidden rounded-2xl border
+                                   border-slate-200 bg-white shadow-sm transition
+                                   duration-200 hover:-translate-y-1
+                                   hover:border-blue-200 hover:shadow-xl
+                                   md:w-auto md:max-w-none"
+                        >
+                            {{-- Product image --}}
+                            <a
+                                href="{{ route('products.show', $product) }}"
+                                aria-label="View {{ $product->name }}"
+                                class="relative flex h-52 items-center justify-center
+                                       overflow-hidden bg-slate-50
+                                       focus:outline-none focus:ring-2
+                                       focus:ring-inset focus:ring-blue-500"
+                            >
+                                <img
+                                    src="{{ $imageUrl }}"
+                                    alt="{{ $product->name }}"
+                                    width="360"
+                                    height="280"
+                                    loading="lazy"
+                                    class="max-h-full max-w-full object-contain p-5
+                                           transition duration-300 group-hover:scale-105"
+                                >
 
-                            <div class="relative h-44 sm:h-48 rounded-2xl bg-gray-50 flex items-center justify-center overflow-hidden">
-                                <img src="{{ $imgUrl }}"
-                                     alt="{{ $product->name }}"
-                                     class="max-h-full max-w-full object-contain p-3 group-hover:scale-105 transition duration-300">
+                                {{-- Product badges --}}
+                                <div
+                                    class="pointer-events-none absolute left-3 top-3
+                                           flex flex-col items-start gap-2"
+                                >
+                                    <span
+                                        class="rounded-full bg-blue-700 px-2.5 py-1
+                                               text-[11px] font-bold uppercase tracking-wide
+                                               text-white shadow-sm"
+                                    >
+                                        New
+                                    </span>
 
-                                <span class="absolute left-3 top-3 rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white shadow">
-                                    New
-                                </span>
-                            </div>
+                                    @if($hasDiscount)
+                                        <span
+                                            class="rounded-full bg-red-500 px-2.5 py-1
+                                                   text-[11px] font-bold text-white shadow-sm"
+                                        >
+                                            Save {{ $discountPercentage }}%
+                                        </span>
+                                    @endif
+                                </div>
 
-                            <div class="mt-4">
-                                <h3 class="min-h-[44px] font-semibold text-gray-900 group-hover:text-blue-700 transition">
-                                    {{ Str::limit($product->name, 55) }}
-                                </h3>
+                                @if($isOutOfStock)
+                                    <span
+                                        class="absolute right-3 top-3 rounded-full
+                                               bg-slate-900 px-2.5 py-1 text-[11px]
+                                               font-semibold text-white shadow-sm"
+                                    >
+                                        Out of stock
+                                    </span>
+                                @elseif($isLowStock)
+                                    <span
+                                        class="absolute right-3 top-3 rounded-full
+                                               bg-amber-500 px-2.5 py-1 text-[11px]
+                                               font-semibold text-white shadow-sm"
+                                    >
+                                        {{ $stock }} left
+                                    </span>
+                                @endif
+                            </a>
 
-                                <div class="mt-3 flex items-center gap-2">
-                                    <p class="text-lg font-bold text-indigo-600">
-                                        ${{ number_format($product->display_price, 2) }}
+                            <div class="flex flex-1 flex-col p-4">
+
+                                {{-- Product title --}}
+                                <a
+                                    href="{{ route('products.show', $product) }}"
+                                    class="line-clamp-2 min-h-[48px] text-base font-semibold
+                                           leading-6 text-slate-900 transition
+                                           hover:text-blue-700 focus:outline-none
+                                           focus:text-blue-700"
+                                >
+                                    {{ \Illuminate\Support\Str::limit($product->name, 65) }}
+                                </a>
+
+                                {{-- Price --}}
+                                <div class="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                                    <p class="text-xl font-bold text-blue-700">
+                                        ${{ number_format((float) $product->display_price, 2) }}
                                     </p>
 
                                     @if($hasDiscount)
-                                        <p class="text-sm text-gray-400 line-through">
-                                            ${{ number_format($product->price, 2) }}
+                                        <p class="text-sm text-slate-400 line-through">
+                                            ${{ number_format($price, 2) }}
                                         </p>
                                     @endif
                                 </div>
 
-                                <div class="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white group-hover:bg-blue-700 transition">
-                                    View Product
+                                {{-- Availability --}}
+                                <div class="mt-2">
+                                    @if($isOutOfStock)
+                                        <p
+                                            class="inline-flex items-center gap-1.5
+                                                   text-xs font-medium text-slate-500"
+                                        >
+                                            <span class="h-2 w-2 rounded-full bg-slate-400"></span>
+                                            Currently unavailable
+                                        </p>
+                                    @elseif($isLowStock)
+                                        <p
+                                            class="inline-flex items-center gap-1.5
+                                                   text-xs font-medium text-amber-700"
+                                        >
+                                            <span class="h-2 w-2 rounded-full bg-amber-500"></span>
+                                            Limited stock available
+                                        </p>
+                                    @else
+                                        <p
+                                            class="inline-flex items-center gap-1.5
+                                                   text-xs font-medium text-green-700"
+                                        >
+                                            <span class="h-2 w-2 rounded-full bg-green-500"></span>
+                                            In stock
+                                        </p>
+                                    @endif
+                                </div>
+
+                                {{-- Product actions --}}
+                                <div class="mt-auto flex items-stretch gap-2 pt-5">
+                                    <a
+                                        href="{{ route('products.show', $product) }}"
+                                        class="inline-flex min-h-11 flex-1 items-center
+                                               justify-center rounded-xl bg-slate-900
+                                               px-3 py-2.5 text-sm font-semibold text-white
+                                               transition hover:bg-blue-700
+                                               focus:outline-none focus:ring-2
+                                               focus:ring-blue-500 focus:ring-offset-2"
+                                    >
+                                        View Product
+                                    </a>
+
+                                    <button
+                                        type="button"
+                                        class="add-to-cart home-cart-icon inline-flex
+                                               min-h-11 w-12 shrink-0 items-center
+                                               justify-center overflow-hidden rounded-xl
+                                               border border-blue-200 bg-blue-50
+                                               text-blue-700 shadow-sm transition
+                                               duration-200 hover:border-blue-700
+                                               hover:bg-blue-700 hover:text-white
+                                               active:scale-95
+                                               focus:outline-none focus:ring-2
+                                               focus:ring-blue-500 focus:ring-offset-2
+                                               disabled:cursor-not-allowed
+                                               disabled:border-slate-200
+                                               disabled:bg-slate-100
+                                               disabled:text-slate-400
+                                               disabled:shadow-none"
+                                        data-id="{{ $product->id }}"
+                                        data-product-name="{{ $product->name }}"
+                                        aria-label="{{ $isOutOfStock
+                                            ? $product->name . ' is out of stock'
+                                            : 'Add ' . $product->name . ' to cart' }}"
+                                        title="{{ $isOutOfStock
+                                            ? 'Out of stock'
+                                            : 'Add to cart' }}"
+                                        @disabled($isOutOfStock)
+                                    >
+                                        Add to cart
+                                    </button>
                                 </div>
                             </div>
-                        </a>
+                        </article>
                     @endforeach
+                </div>
 
+                <div class="mt-5 sm:hidden">
+                    <a
+                        href="{{ route('products.index') }}"
+                        class="inline-flex min-h-12 w-full items-center
+                               justify-center rounded-xl border border-blue-200
+                               bg-white px-4 py-3 text-sm font-semibold
+                               text-blue-700 transition hover:bg-blue-50"
+                    >
+                        View all products
+                    </a>
                 </div>
             </div>
-
-            <div class="mt-4 sm:hidden">
-                <a href="{{ route('products.index') }}"
-                   class="inline-flex w-full items-center justify-center rounded-xl border border-blue-200 px-4 py-3 text-sm font-semibold text-blue-700 hover:bg-blue-50 transition">
-                    View all products
-                </a>
-            </div>
-
-        </div>
-    </section>
+        </section>
     @endif
 
-    <!-- TRUST SECTION -->
-    <section class="py-12 sm:py-16">
-        <div class="max-w-7xl mx-auto px-4 grid md:grid-cols-3 gap-6 sm:gap-8">
+    {{-- ========================================================= --}}
+    {{-- WHOLESALE CTA --}}
+    {{-- ========================================================= --}}
+    <section class="py-12 sm:py-16 lg:py-20">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div
+                class="relative overflow-hidden rounded-3xl bg-slate-950
+                       px-6 py-10 text-white shadow-xl sm:px-10 sm:py-12
+                       lg:flex lg:items-center lg:justify-between lg:gap-10
+                       lg:px-14"
+            >
+                <div
+                    class="pointer-events-none absolute -right-16 -top-20
+                           h-64 w-64 rounded-full bg-blue-600/30 blur-3xl"
+                    aria-hidden="true"
+                ></div>
 
-            <div class="rounded-2xl bg-white/80 p-6 text-center shadow-sm ring-1 ring-gray-100">
-                <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-xl">✓</div>
-                <h3 class="font-bold text-xl text-gray-900">Verified Suppliers</h3>
-                <p class="text-gray-600 mt-2">Trusted global manufacturing partners</p>
+                <div
+                    class="pointer-events-none absolute -bottom-24 left-1/3
+                           h-64 w-64 rounded-full bg-indigo-600/20 blur-3xl"
+                    aria-hidden="true"
+                ></div>
+
+                <div class="relative max-w-2xl">
+                    <p
+                        class="text-sm font-bold uppercase tracking-[0.18em]
+                               text-blue-300"
+                    >
+                        Wholesale and sourcing
+                    </p>
+
+                    <h2
+                        class="mt-3 text-3xl font-bold tracking-tight
+                               sm:text-4xl"
+                    >
+                        Looking for products in larger quantities?
+                    </h2>
+
+                    <p class="mt-4 leading-7 text-slate-300">
+                        Explore our available products and discover sourcing
+                        opportunities supported by competitive wholesale pricing
+                        and reliable international trade experience.
+                    </p>
+                </div>
+
+                <div
+                    class="relative mt-8 flex flex-col gap-3
+                           sm:flex-row lg:mt-0 lg:shrink-0"
+                >
+                    <a
+                        href="{{ route('products.index') }}"
+                        class="inline-flex min-h-12 items-center justify-center
+                               rounded-xl bg-blue-600 px-6 py-3 font-semibold
+                               text-white transition hover:bg-blue-500
+                               focus:outline-none focus:ring-2
+                               focus:ring-blue-400 focus:ring-offset-2
+                               focus:ring-offset-slate-950"
+                    >
+                        Browse Products
+                    </a>
+
+                    <a
+                        href="#categories"
+                        class="inline-flex min-h-12 items-center justify-center
+                               rounded-xl border border-white/20 bg-white/10
+                               px-6 py-3 font-semibold text-white backdrop-blur-sm
+                               transition hover:bg-white/20
+                               focus:outline-none focus:ring-2
+                               focus:ring-white/70 focus:ring-offset-2
+                               focus:ring-offset-slate-950"
+                    >
+                        View Categories
+                    </a>
+                </div>
             </div>
-
-            <div class="rounded-2xl bg-white/80 p-6 text-center shadow-sm ring-1 ring-gray-100">
-                <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 text-xl">🔒</div>
-                <h3 class="font-bold text-xl text-gray-900">Secure Trade</h3>
-                <p class="text-gray-600 mt-2">Safe international transactions</p>
-            </div>
-
-            <div class="rounded-2xl bg-white/80 p-6 text-center shadow-sm ring-1 ring-gray-100">
-                <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100 text-xl">⚡</div>
-                <h3 class="font-bold text-xl text-gray-900">Fast Response</h3>
-                <p class="text-gray-600 mt-2">Dedicated support for B2B clients</p>
-            </div>
-
         </div>
     </section>
-
 </div>
 
-<!-- SLIDESHOW SCRIPT -->
 <script>
-function slideshow() {
-    return {
-        images: [
-            '{{ asset('images/slider2exp1.jpg') }}',
-            '{{ asset('images/slider3.jpg') }}',
-            '{{ asset('images/slider4.jpg') }}',
-        ],
-        current: 0,
-        interval: null,
+    /*
+     * Small Alpine component for the existing promotional slideshow.
+     * No product-carousel or MutationObserver JavaScript is required.
+     */
+    window.homeSlideshow = function () {
+        return {
+            images: [
+                @js(asset('images/slider2exp1.jpg')),
+                @js(asset('images/slider3.jpg')),
+                @js(asset('images/slider4.jpg')),
+            ],
 
-        start() {
-            this.interval = setInterval(() => {
+            current: 0,
+            timer: null,
+            paused: false,
+
+            start() {
+                this.stop();
+
+                if (
+                    window.matchMedia &&
+                    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                ) {
+                    return;
+                }
+
+                this.timer = window.setInterval(() => {
+                    if (!this.paused) {
+                        this.next(false);
+                    }
+                }, 6000);
+            },
+
+            stop() {
+                if (this.timer !== null) {
+                    window.clearInterval(this.timer);
+                    this.timer = null;
+                }
+            },
+
+            restart() {
+                this.stop();
+                this.start();
+            },
+
+            pause() {
+                this.paused = true;
+            },
+
+            resume() {
+                this.paused = false;
+
+                if (this.timer === null) {
+                    this.start();
+                }
+            },
+
+            next(manual = false) {
                 this.current = (this.current + 1) % this.images.length;
-            }, 5000);
-        }
-    }
-}
+
+                if (manual) {
+                    this.restart();
+                }
+            },
+
+            previous(manual = false) {
+                this.current =
+                    (this.current - 1 + this.images.length) %
+                    this.images.length;
+
+                if (manual) {
+                    this.restart();
+                }
+            },
+
+            goTo(index) {
+                this.current = index;
+                this.restart();
+            },
+        };
+    };
 </script>
 
 @endsection
