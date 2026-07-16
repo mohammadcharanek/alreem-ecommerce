@@ -1,10 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'Alreem | Global Import & Export Trading Company')
-
+@section(
+    'title',
+    'Al Reem Expo | Imported Products & Delivery in Lebanon'
+)
 @section(
     'meta_description',
-    'Alreem is a global import and export trading company specializing in wholesale sourcing, international logistics, and supply chain solutions across multiple industries.'
+    'Al Reem Expo imports selected food, beverage, personal care, and household products from the USA, Canada, and Brazil for customers in Lebanon.'
 )
 
 @section('canonical', route('home'))
@@ -17,19 +19,19 @@
         [
             'desktop' => asset('images/Slider1IMG.jpg'),
             'mobile'  => asset('images/Slider1MOB.jpg'),
-            'alt'     => 'Alreem Expo imported products and international delivery services',
+            'alt'     => 'Al Reem Expo imported products and international delivery services',
             'href'    => route('products.index'),
         ],
         [
             'desktop' => asset('images/Slider2IMG.jpg'),
             'mobile'  => asset('images/Slider2MOB.jpg'),
-            'alt'     => 'Alreem Expo integrated import, sourcing and wholesale supply solutions',
+            'alt'     => 'Al Reem Expo integrated import, sourcing and wholesale supply solutions',
             'href'    => route('products.index'),
         ],
         [
             'desktop' => asset('images/Slider3IMG.jpg'),
             'mobile'  => asset('images/Slider3MOB.jpg'),
-            'alt'     => 'Alreem Expo trusted global sourcing and fast secure delivery',
+            'alt'     => 'Al Reem Expo trusted global sourcing and fast secure delivery',
             'href'    => route('products.index'),
         ],
     ];
