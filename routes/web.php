@@ -60,13 +60,6 @@ Route::get('/returns', [PageController::class, 'returns'])->name('returns');
 
 //sitemap
 Route::get('/sitemap.xml', [SitemapController::class, 'sitemap'])
-    ->withoutMiddleware([
-        \Illuminate\Cookie\Middleware\EncryptCookies::class,
-        \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
-        \Illuminate\Session\Middleware\StartSession::class,
-        \Illuminate\View\Middleware\ShareErrorsFromSession::class,
-        \App\Http\Middleware\VerifyCsrfToken::class,
-    ])
     ->name('sitemap.xml');
 // Newsletter subscription
 Route::post('/newsletter', [NewsletterController::class, 'store'])->name('newsletter.subscribe');
