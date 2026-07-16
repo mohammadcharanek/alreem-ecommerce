@@ -12,6 +12,29 @@
 
 @section('content')
 
+@php
+    $homeSlides = [
+        [
+            'desktop' => asset('images/Slider1IMG.jpg'),
+            'mobile'  => asset('images/Slider1MOB.jpg'),
+            'alt'     => 'Alreem Expo imported products and international delivery services',
+            'href'    => route('products.index'),
+        ],
+        [
+            'desktop' => asset('images/Slider2IMG.jpg'),
+            'mobile'  => asset('images/Slider2MOB.jpg'),
+            'alt'     => 'Alreem Expo integrated import, sourcing and wholesale supply solutions',
+            'href'    => route('products.index'),
+        ],
+        [
+            'desktop' => asset('images/Slider3IMG.jpg'),
+            'mobile'  => asset('images/Slider3MOB.jpg'),
+            'alt'     => 'Alreem Expo trusted global sourcing and fast secure delivery',
+            'href'    => route('products.index'),
+        ],
+    ];
+@endphp
+
 <style>
     [x-cloak] {
         display: none !important;
@@ -92,228 +115,40 @@
 
         <div class="relative mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
 
-            <div class="grid items-center gap-10 lg:grid-cols-[1fr_1.08fr] lg:gap-14">
-
-                {{-- Hero content --}}
-                <div class="text-center lg:text-left">
-
-                    {{-- Brand --}}
-                    <div class="mb-6 flex items-center justify-center gap-3 lg:justify-start">
-                        <img
-                            src="{{ Storage::url('logo.jpeg') }}"
-                            alt="Alreem Expo logo"
-                            width="56"
-                            height="56"
-                            class="h-14 w-14 rounded-2xl object-cover shadow-sm ring-1 ring-slate-200"
-                        >
-
-                        <div class="text-left">
-                            <p class="text-lg font-bold leading-none text-slate-900">
-                                Alreem Expo
-                            </p>
-
-                            <p class="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
-                                Import &amp; Export
-                            </p>
-                        </div>
-                    </div>
-
+            {{-- Hero heading and actions --}}
+            <div class="mb-7 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                <div class="max-w-3xl">
                     <div
-                        class="mx-auto mb-5 inline-flex items-center gap-2 rounded-full
+                        class="mb-4 inline-flex items-center gap-2 rounded-full
                                border border-blue-200 bg-blue-50 px-3 py-1.5
-                               text-xs font-semibold text-blue-800 lg:mx-0"
+                               text-xs font-semibold text-blue-800"
                     >
                         <span class="h-2 w-2 rounded-full bg-green-500"></span>
-                        Global sourcing and wholesale supply
+                        Global import, sourcing and wholesale supply
                     </div>
 
                     <h1
-                        class="mx-auto max-w-2xl text-4xl font-bold tracking-tight text-slate-950
-                               sm:text-5xl lg:mx-0 lg:text-6xl lg:leading-[1.08]"
+                        class="text-3xl font-bold tracking-tight text-slate-950
+                               sm:text-4xl lg:text-5xl"
                     >
-                        Reliable products.
-                        <span class="text-blue-700">Global sourcing.</span>
-                        Better value.
+                        Global sourcing, quality products,
+                        <span class="text-blue-700">reliable delivery.</span>
                     </h1>
 
-                    <p
-                        class="mx-auto mt-6 max-w-xl text-base leading-7 text-slate-600
-                               sm:text-lg lg:mx-0"
-                    >
-                        Discover carefully selected products supported by competitive pricing,
-                        dependable suppliers, and professional import and logistics experience.
+                    <p class="mt-4 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
+                        Carefully selected imported products supported by dependable
+                        suppliers, competitive pricing and professional delivery services.
                     </p>
-
-                    {{-- Main actions --}}
-                    <div
-                        class="mt-8 flex flex-col items-stretch justify-center gap-3
-                               sm:flex-row sm:items-center lg:justify-start"
-                    >
-                        <a
-                            href="{{ route('products.index') }}"
-                            class="inline-flex min-h-12 w-full items-center justify-center gap-2
-                                   rounded-xl bg-blue-700 px-6 py-3 text-base font-semibold
-                                   text-white shadow-sm transition duration-200
-                                   hover:bg-blue-800 hover:shadow-md
-                                   focus:outline-none focus:ring-2 focus:ring-blue-500
-                                   focus:ring-offset-2 sm:w-auto"
-                        >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                class="h-5 w-5"
-                                aria-hidden="true"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="M4 7h16M5.5 7l1 13h11l1-13M9 11v5M15 11v5M9 7V4h6v3"
-                                />
-                            </svg>
-
-                            Shop Products
-                        </a>
-
-                        <a
-                            href="#categories"
-                            class="inline-flex min-h-12 w-full items-center justify-center gap-2
-                                   rounded-xl border border-slate-300 bg-white px-6 py-3
-                                   text-base font-semibold text-slate-700 shadow-sm
-                                   transition duration-200 hover:border-blue-300
-                                   hover:bg-blue-50 hover:text-blue-700
-                                   focus:outline-none focus:ring-2 focus:ring-blue-500
-                                   focus:ring-offset-2 sm:w-auto"
-                        >
-                            Browse Categories
-
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                class="h-4 w-4"
-                                aria-hidden="true"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="m9 18 6-6-6-6"
-                                />
-                            </svg>
-                        </a>
-                    </div>
-
-                    {{-- Small confidence points --}}
-                    <div
-                        class="mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2
-                               text-sm text-slate-600 lg:justify-start"
-                    >
-                        <span class="inline-flex items-center gap-2">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                class="h-4 w-4 text-green-600"
-                                aria-hidden="true"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="m5 12 4 4L19 6"
-                                />
-                            </svg>
-
-                            Verified suppliers
-                        </span>
-
-                        <span class="inline-flex items-center gap-2">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                class="h-4 w-4 text-green-600"
-                                aria-hidden="true"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="m5 12 4 4L19 6"
-                                />
-                            </svg>
-
-                            Wholesale pricing
-                        </span>
-
-                        <span class="inline-flex items-center gap-2">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                class="h-4 w-4 text-green-600"
-                                aria-hidden="true"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="m5 12 4 4L19 6"
-                                />
-                            </svg>
-
-                            Responsive support
-                        </span>
-                    </div>
                 </div>
 
-                {{-- Hero slideshow --}}
-                <div
-                    class="home-motion group relative overflow-hidden rounded-2xl
-                           border border-slate-200 bg-slate-100 shadow-xl
-                           sm:rounded-3xl"
-                    x-data="homeSlideshow()"
-                    x-init="start()"
-                    @mouseenter="pause()"
-                    @mouseleave="resume()"
-                    @focusin="pause()"
-                    @focusout="resume()"
-                >
-                    <div class="aspect-[16/10] sm:aspect-[1942/809]">
-                        <img
-                            :src="images[current]"
-                            :alt="`Alreem Expo promotional banner ${current + 1}`"
-                            width="1942"
-                            height="809"
-                            fetchpriority="high"
-                            class="h-full w-full object-cover"
-                        >
-                    </div>
-
-                    {{-- Soft image overlay --}}
-                    <div
-                        class="pointer-events-none absolute inset-0 bg-gradient-to-t
-                               from-slate-950/20 via-transparent to-transparent"
-                        aria-hidden="true"
-                    ></div>
-
-                    {{-- Previous --}}
-                    <button
-                        type="button"
-                        @click="previous(true)"
-                        aria-label="Show previous promotional banner"
-                        class="absolute left-3 top-1/2 inline-flex h-11 w-11
-                               -translate-y-1/2 items-center justify-center rounded-full
-                               bg-white/90 text-slate-800 shadow-md backdrop-blur-sm
-                               transition hover:bg-white
-                               focus:outline-none focus:ring-2 focus:ring-blue-500"
+                <div class="flex flex-col gap-3 sm:flex-row lg:shrink-0">
+                    <a
+                        href="{{ route('products.index') }}"
+                        class="inline-flex min-h-12 items-center justify-center gap-2
+                               rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white
+                               shadow-sm transition hover:bg-blue-800 hover:shadow-md
+                               focus:outline-none focus:ring-2 focus:ring-blue-500
+                               focus:ring-offset-2"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -327,29 +162,31 @@
                             <path
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
-                                d="m15 18-6-6 6-6"
+                                d="M4 7h16M5.5 7l1 13h11l1-13M9 11v5M15 11v5M9 7V4h6v3"
                             />
                         </svg>
-                    </button>
 
-                    {{-- Next --}}
-                    <button
-                        type="button"
-                        @click="next(true)"
-                        aria-label="Show next promotional banner"
-                        class="absolute right-3 top-1/2 inline-flex h-11 w-11
-                               -translate-y-1/2 items-center justify-center rounded-full
-                               bg-white/90 text-slate-800 shadow-md backdrop-blur-sm
-                               transition hover:bg-white
-                               focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        Shop Products
+                    </a>
+
+                    <a
+                        href="#categories"
+                        class="inline-flex min-h-12 items-center justify-center gap-2
+                               rounded-xl border border-slate-300 bg-white px-6 py-3
+                               font-semibold text-slate-700 shadow-sm transition
+                               hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700
+                               focus:outline-none focus:ring-2 focus:ring-blue-500
+                               focus:ring-offset-2"
                     >
+                        Browse Categories
+
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             viewBox="0 0 24 24"
                             fill="none"
                             stroke="currentColor"
                             stroke-width="2"
-                            class="h-5 w-5"
+                            class="h-4 w-4"
                             aria-hidden="true"
                         >
                             <path
@@ -358,27 +195,180 @@
                                 d="m9 18 6-6-6-6"
                             />
                         </svg>
-                    </button>
-
-                    {{-- Slide indicators --}}
-                    <div
-                        class="absolute bottom-4 left-0 right-0 flex items-center
-                               justify-center gap-2"
-                    >
-                        <template x-for="(image, index) in images" :key="index">
-                            <button
-                                type="button"
-                                @click="goTo(index)"
-                                class="h-2.5 rounded-full shadow-sm transition-all duration-200"
-                                :class="current === index
-                                    ? 'w-8 bg-white'
-                                    : 'w-2.5 bg-white/60 hover:bg-white'"
-                                :aria-label="`Show promotional banner ${index + 1}`"
-                                :aria-current="current === index ? 'true' : 'false'"
-                            ></button>
-                        </template>
-                    </div>
+                    </a>
                 </div>
+            </div>
+
+            {{-- Responsive promotional slider --}}
+            <div
+                class="home-motion group relative overflow-hidden rounded-2xl
+                       border border-slate-200 bg-white shadow-xl sm:rounded-3xl"
+                x-data="homeSlideshow(@js($homeSlides), 6500)"
+                @mouseenter="hovered = true"
+                @mouseleave="hovered = false"
+                @focusin="focusWithin = true"
+                @focusout="focusWithin = false"
+                @keydown.left.prevent="previous(true)"
+                @keydown.right.prevent="next(true)"
+                @touchstart.passive="handleTouchStart($event)"
+                @touchend="handleTouchEnd($event)"
+                @click.capture="handleClickCapture($event)"
+                role="region"
+                aria-roledescription="carousel"
+                aria-label="Alreem Expo promotional banners"
+                tabindex="0"
+            >
+                {{--
+                    Mobile uses the 4:5 artwork.
+                    Tablet and desktop use the wide artwork.
+                --}}
+                <div class="relative aspect-[4/5] overflow-hidden bg-white md:aspect-[21/9]">
+                    <template
+                        x-for="(slide, index) in slides"
+                        :key="slide.desktop"
+                    >
+                        <a
+                            x-show="current === index"
+                            x-cloak
+                            :href="slide.href"
+                            :aria-label="slide.alt"
+                            :aria-hidden="current === index ? 'false' : 'true'"
+                            class="absolute inset-0 block"
+                            x-transition:enter="transition-opacity duration-500 ease-out"
+                            x-transition:enter-start="opacity-0"
+                            x-transition:enter-end="opacity-100"
+                            x-transition:leave="transition-opacity duration-300 ease-in"
+                            x-transition:leave-start="opacity-100"
+                            x-transition:leave-end="opacity-0"
+                        >
+                            <picture class="block h-full w-full">
+                                <source
+                                    media="(max-width: 767px)"
+                                    :srcset="slide.mobile"
+                                >
+
+                                <img
+                                    :src="slide.desktop"
+                                    :alt="slide.alt"
+                                    :loading="index === 0 ? 'eager' : 'lazy'"
+                                    :fetchpriority="index === 0 ? 'high' : 'auto'"
+                                    width="1920"
+                                    height="820"
+                                    draggable="false"
+                                    class="h-full w-full select-none object-contain"
+                                >
+                            </picture>
+                        </a>
+                    </template>
+
+                    {{-- No-JavaScript fallback --}}
+                    <noscript>
+                        <picture class="block h-full w-full">
+                            <source
+                                media="(max-width: 767px)"
+                                srcset="{{ asset('images/Slider1MOB.jpg') }}"
+                            >
+
+                            <img
+                                src="{{ asset('images/Slider1IMG.jpg') }}"
+                                alt="Alreem Expo imported products and delivery services"
+                                width="1920"
+                                height="820"
+                                class="h-full w-full object-contain"
+                            >
+                        </picture>
+                    </noscript>
+                </div>
+
+                {{-- Previous slide --}}
+                <button
+                    x-show="slides.length > 1"
+                    x-cloak
+                    type="button"
+                    @click.stop="previous(true)"
+                    aria-label="Show previous promotional banner"
+                    class="absolute left-4 top-1/2 z-20 hidden h-11 w-11
+                           -translate-y-1/2 items-center justify-center rounded-full
+                           border border-white/40 bg-slate-950/55 text-white shadow-lg
+                           backdrop-blur-md transition hover:bg-slate-950/75
+                           focus:outline-none focus:ring-2 focus:ring-white sm:inline-flex"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        class="h-5 w-5"
+                        aria-hidden="true"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="m15 18-6-6 6-6"
+                        />
+                    </svg>
+                </button>
+
+                {{-- Next slide --}}
+                <button
+                    x-show="slides.length > 1"
+                    x-cloak
+                    type="button"
+                    @click.stop="next(true)"
+                    aria-label="Show next promotional banner"
+                    class="absolute right-4 top-1/2 z-20 hidden h-11 w-11
+                           -translate-y-1/2 items-center justify-center rounded-full
+                           border border-white/40 bg-slate-950/55 text-white shadow-lg
+                           backdrop-blur-md transition hover:bg-slate-950/75
+                           focus:outline-none focus:ring-2 focus:ring-white sm:inline-flex"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        class="h-5 w-5"
+                        aria-hidden="true"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="m9 18 6-6-6-6"
+                        />
+                    </svg>
+                </button>
+
+                {{-- Slide indicators --}}
+                <div
+                    x-show="slides.length > 1"
+                    x-cloak
+                    class="absolute bottom-3 left-1/2 z-20 flex
+                           -translate-x-1/2 items-center gap-2 rounded-full
+                           bg-slate-950/45 px-3 py-2 shadow-lg backdrop-blur-md
+                           sm:bottom-4"
+                >
+                    <template x-for="(slide, index) in slides" :key="index">
+                        <button
+                            type="button"
+                            @click.stop="goTo(index)"
+                            class="h-2.5 rounded-full transition-all duration-300"
+                            :class="current === index
+                                ? 'w-8 bg-white'
+                                : 'w-2.5 bg-white/50 hover:bg-white/80'"
+                            :aria-label="`Show promotional banner ${index + 1}`"
+                            :aria-current="current === index ? 'true' : 'false'"
+                        ></button>
+                    </template>
+                </div>
+
+                {{-- Accessible slide announcement --}}
+                <p
+                    class="sr-only"
+                    aria-live="polite"
+                    x-text="slides[current]?.alt"
+                ></p>
             </div>
 
             {{-- Trust strip --}}
@@ -1022,89 +1012,5 @@
         </div>
     </section>
 </div>
-
-<script>
-    /*
-     * Small Alpine component for the existing promotional slideshow.
-     * No product-carousel or MutationObserver JavaScript is required.
-     */
-    window.homeSlideshow = function () {
-        return {
-            images: [
-                @js(asset('images/slider2exp1.jpg')),
-                @js(asset('images/slider3.jpg')),
-                @js(asset('images/slider4.jpg')),
-            ],
-
-            current: 0,
-            timer: null,
-            paused: false,
-
-            start() {
-                this.stop();
-
-                if (
-                    window.matchMedia &&
-                    window.matchMedia('(prefers-reduced-motion: reduce)').matches
-                ) {
-                    return;
-                }
-
-                this.timer = window.setInterval(() => {
-                    if (!this.paused) {
-                        this.next(false);
-                    }
-                }, 6000);
-            },
-
-            stop() {
-                if (this.timer !== null) {
-                    window.clearInterval(this.timer);
-                    this.timer = null;
-                }
-            },
-
-            restart() {
-                this.stop();
-                this.start();
-            },
-
-            pause() {
-                this.paused = true;
-            },
-
-            resume() {
-                this.paused = false;
-
-                if (this.timer === null) {
-                    this.start();
-                }
-            },
-
-            next(manual = false) {
-                this.current = (this.current + 1) % this.images.length;
-
-                if (manual) {
-                    this.restart();
-                }
-            },
-
-            previous(manual = false) {
-                this.current =
-                    (this.current - 1 + this.images.length) %
-                    this.images.length;
-
-                if (manual) {
-                    this.restart();
-                }
-            },
-
-            goTo(index) {
-                this.current = index;
-                this.restart();
-            },
-        };
-    };
-</script>
 
 @endsection

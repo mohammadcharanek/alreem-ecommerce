@@ -4,6 +4,190 @@ import GLightbox from 'glightbox';
 import 'glightbox/dist/css/glightbox.css';
 
 window.Alpine = Alpine;
+
+/* ==========================================================
+   Homepage Responsive Slideshow
+========================================================== */
+
+window.homeSlideshow = function (slides = [], autoplayDelay = 6500) {
+    return {
+        slides: Array.isArray(slides) ? slides : [],
+        autoplayDelay: Math.max(3000, Number(autoplayDelay) || 6500),
+
+        current: 0,
+        timer: null,
+        hovered: false,
+        focusWithin: false,
+
+        touchStartX: null,
+        touchStartY: null,
+        suppressClick: false,
+
+        visibilityHandler: null,
+
+        init() {
+            this.visibilityHandler = () => {
+                if (!document.hidden && this.timer === null) {
+                    this.start();
+                }
+            };
+
+            document.addEventListener(
+                'visibilitychange',
+                this.visibilityHandler
+            );
+
+            this.start();
+        },
+
+        destroy() {
+            this.stop();
+
+            if (this.visibilityHandler) {
+                document.removeEventListener(
+                    'visibilitychange',
+                    this.visibilityHandler
+                );
+            }
+        },
+
+        prefersReducedMotion() {
+            return window.matchMedia?.(
+                '(prefers-reduced-motion: reduce)'
+            ).matches ?? false;
+        },
+
+        isPaused() {
+            return this.hovered || this.focusWithin || document.hidden;
+        },
+
+        start() {
+            this.stop();
+
+            if (
+                this.slides.length <= 1 ||
+                this.prefersReducedMotion()
+            ) {
+                return;
+            }
+
+            this.timer = window.setInterval(() => {
+                if (!this.isPaused()) {
+                    this.next(false);
+                }
+            }, this.autoplayDelay);
+        },
+
+        stop() {
+            if (this.timer !== null) {
+                window.clearInterval(this.timer);
+                this.timer = null;
+            }
+        },
+
+        restart() {
+            this.stop();
+            this.start();
+        },
+
+        next(manual = false) {
+            if (this.slides.length <= 1) return;
+
+            this.current =
+                (this.current + 1) % this.slides.length;
+
+            if (manual) {
+                this.restart();
+            }
+        },
+
+        previous(manual = false) {
+            if (this.slides.length <= 1) return;
+
+            this.current =
+                (this.current - 1 + this.slides.length) %
+                this.slides.length;
+
+            if (manual) {
+                this.restart();
+            }
+        },
+
+        goTo(index) {
+            const target = Number(index);
+
+            if (
+                !Number.isInteger(target) ||
+                target < 0 ||
+                target >= this.slides.length ||
+                target === this.current
+            ) {
+                return;
+            }
+
+            this.current = target;
+            this.restart();
+        },
+
+        handleTouchStart(event) {
+            const touch = event.changedTouches?.[0];
+
+            if (!touch) return;
+
+            this.touchStartX = touch.clientX;
+            this.touchStartY = touch.clientY;
+        },
+
+        handleTouchEnd(event) {
+            const touch = event.changedTouches?.[0];
+
+            if (
+                !touch ||
+                this.touchStartX === null ||
+                this.touchStartY === null
+            ) {
+                return;
+            }
+
+            const distanceX = touch.clientX - this.touchStartX;
+            const distanceY = touch.clientY - this.touchStartY;
+
+            this.touchStartX = null;
+            this.touchStartY = null;
+
+            /*
+             * Ignore small movements and normal vertical page scrolling.
+             */
+            if (
+                Math.abs(distanceX) < 50 ||
+                Math.abs(distanceX) <= Math.abs(distanceY)
+            ) {
+                return;
+            }
+
+            event.preventDefault();
+            this.suppressClick = true;
+
+            if (distanceX > 0) {
+                this.previous(true);
+            } else {
+                this.next(true);
+            }
+
+            window.setTimeout(() => {
+                this.suppressClick = false;
+            }, 300);
+        },
+
+        handleClickCapture(event) {
+            if (!this.suppressClick) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+        },
+    };
+};
+
 Alpine.start();
 
 /* ==========================================================
