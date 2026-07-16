@@ -36,12 +36,7 @@ use App\Services\TwilioService;
 // Homepage
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-//test twilio
-Route::get('/test-twilio', function (TwilioService $twilio) {
-    $sent = $twilio->sendAdminSms('Test message from Laravel Al Reem Expo.');
 
-    return $sent ? 'Twilio SMS sent.' : 'Twilio SMS failed. Check laravel.log.';
-});
 
 //faq
 Route::view('/faq', 'pages.faq')->name('faq');
@@ -64,7 +59,15 @@ Route::get('/categories', [CategoryController::class, 'index'])->name('categorie
 Route::get('/returns', [PageController::class, 'returns'])->name('returns');
 
 //sitemap
-Route::get('/sitemap.xml', [SitemapController::class, 'sitemap'])->name('sitemap.xml');
+Route::get('/sitemap.xml', [SitemapController::class, 'sitemap'])
+    ->withoutMiddleware([
+        \Illuminate\Cookie\Middleware\EncryptCookies::class,
+        \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+        \Illuminate\Session\Middleware\StartSession::class,
+        \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+        \App\Http\Middleware\VerifyCsrfToken::class,
+    ])
+    ->name('sitemap.xml');
 // Newsletter subscription
 Route::post('/newsletter', [NewsletterController::class, 'store'])->name('newsletter.subscribe');
 
@@ -197,22 +200,69 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', AdminMiddleware::cla
 | Debug / Test Routes
 |--------------------------------------------------------------------------
 */
-Route::get('/send-test-email', function () {
-    try {
-        Mail::raw('This is a test email sent from Laravel using Gmail SMTP.', function ($message) {
-            $message->to('alreemexpo1@gmail.com')->subject('Laravel Gmail SMTP Test');
-        });
-        return '✅ Email sent successfully!';
-    } catch (\Exception $e) {
-        return '❌ Failed to send email: ' . $e->getMessage();
-    }
-});
-Route::get('/check-mail-config', fn () => config('mail.mailers.smtp.password') ? 'Password loaded' : 'Password not loaded');
-Route::get('/whatsapp-test', [CheckoutController::class, 'sendWhatsAppTest']);
 
 /*
 |--------------------------------------------------------------------------
 | Auth Scaffolding (Laravel Breeze / Jetstream / UI)
 |--------------------------------------------------------------------------
 */
+/*
+|--------------------------------------------------------------------------
+| Local Debug / Test Routes
+|--------------------------------------------------------------------------
+|
+| These routes are available only when APP_ENV=local.
+| They will not exist on the production VPS.
+|
+*/
+
+if (app()->environment('local')) {
+    Route::get('/test-twilio', function (TwilioService $twilio) {
+        $sent = $twilio->sendAdminSms(
+            'Test message from Laravel Al Reem Expo.'
+        );
+
+        return $sent
+            ? 'Twilio SMS sent.'
+            : 'Twilio SMS failed. Check laravel.log.';
+    });
+
+    Route::get('/send-test-email', function () {
+        try {
+            Mail::raw(
+                'This is a test email sent from Laravel.',
+                function ($message) {
+                    $message
+                        ->to('alreemexpo1@gmail.com')
+                        ->subject('Laravel SMTP Test');
+                }
+            );
+
+            return 'Email sent successfully.';
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response('Email test failed.', 500);
+        }
+    });
+
+    Route::get(
+        '/check-mail-config',
+        fn () => config('mail.mailers.smtp.password')
+            ? 'Password loaded'
+            : 'Password not loaded'
+    );
+
+    Route::get(
+        '/whatsapp-test',
+        [CheckoutController::class, 'sendWhatsAppTest']
+    );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Auth Scaffolding
+|--------------------------------------------------------------------------
+*/
+
 require __DIR__ . '/auth.php';

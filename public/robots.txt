@@ -1,3 +1,22 @@
 User-agent: *
-Disallow:
-Sitemap: {{ config('app.url') }}/sitemap.xml
+Allow: /
+
+Disallow: /admin/
+Disallow: /cart
+Disallow: /checkout
+Disallow: /wishlist
+Disallow: /my-orders
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /email/
+Disallow: /products/import
+Disallow: /test-twilio
+Disallow: /send-test-email
+Disallow: /check-mail-config
+Disallow: /whatsapp-test
+
+Sitemap: https://www.alreemexpo.com/sitemap.xml

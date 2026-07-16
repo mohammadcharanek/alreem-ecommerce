@@ -1,81 +1,144 @@
 <?php
-// app/Http/Controllers/SitemapController.php
+
 namespace App\Http\Controllers;
 
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Response;
-use Illuminate\Support\Facades\Route;
+use App\Models\Vendor;
+use Illuminate\Http\Response;
 
 class SitemapController extends Controller
 {
-    public function sitemap()
+    /**
+     * Generate the public XML sitemap.
+     */
+    public function sitemap(): Response
     {
-        // Cache for 1h; you can shorten/extend as you like
-        $xml = Cache::remember('sitemap.xml', 3600, function () {
-            // Static pages (add any other public pages you want indexed)
-            $static = collect([
-                ['loc' => url('/'),                  'lastmod' => now()],
-                ['loc' => route('products.index'),   'lastmod' => now()],
-                ['loc' => route('categories.index'), 'lastmod' => now()],
-                ['loc' => route('contact.show'),     'lastmod' => now()],
-                // ['loc' => route('about'),          'lastmod' => now()],
-                // ['loc' => route('returns'),        'lastmod' => now()],
-            ]);
+        /*
+         * Public static pages.
+         *
+         * Only include pages that should appear in Google search.
+         */
+        $staticPages = [
+            [
+                'url' => route('home'),
+                'changefreq' => 'daily',
+                'priority' => '1.0',
+            ],
+            [
+                'url' => route('products.index'),
+                'changefreq' => 'daily',
+                'priority' => '0.9',
+            ],
+            [
+                'url' => route('categories.index'),
+                'changefreq' => 'weekly',
+                'priority' => '0.8',
+            ],
+            [
+                'url' => route('about'),
+                'changefreq' => 'monthly',
+                'priority' => '0.6',
+            ],
+            [
+                'url' => route('contact.show'),
+                'changefreq' => 'monthly',
+                'priority' => '0.6',
+            ],
+            [
+                'url' => route('faq'),
+                'changefreq' => 'monthly',
+                'priority' => '0.6',
+            ],
+            [
+                'url' => route('shipping'),
+                'changefreq' => 'monthly',
+                'priority' => '0.5',
+            ],
+            [
+                'url' => route('returns'),
+                'changefreq' => 'monthly',
+                'priority' => '0.5',
+            ],
+            [
+                'url' => route('support'),
+                'changefreq' => 'monthly',
+                'priority' => '0.5',
+            ],
+        ];
 
-            // Taxonomies
-            $categories = Category::query()
-                ->select(['slug','updated_at'])
-                ->whereNotNull('slug')
-                ->get();
+        /*
+         * Only active products should be indexed.
+         */
+        $products = Product::query()
+            ->active()
+            ->whereNotNull('slug')
+            ->where('slug', '!=', '')
+            ->select(['id', 'slug', 'updated_at'])
+            ->orderByDesc('updated_at')
+            ->get();
 
-            $brands = Brand::query()
-                ->select(['slug','updated_at'])
-                ->whereNotNull('slug')
-                ->get();
+        /*
+         * Include only categories that contain active products.
+         */
+        $categoryIds = Product::query()
+            ->active()
+            ->whereNotNull('category_id')
+            ->distinct()
+            ->pluck('category_id');
 
-            // Products (live only). Keep under 50k per single sitemap file.
-            $products = Product::query()
-                ->where('is_active', true)
-                ->select(['id','slug','updated_at'])
-                ->latest('updated_at')
-                ->limit(50000)
-                ->get();
+        $categories = Category::query()
+            ->whereIn('id', $categoryIds)
+            ->whereNotNull('slug')
+            ->where('slug', '!=', '')
+            ->select(['id', 'slug', 'updated_at'])
+            ->orderByDesc('updated_at')
+            ->get();
 
-            // Build URLs
-            $catUrls = $categories->map(fn($c) => [
-                'loc'     => route('products.byCategory', ['slug' => $c->slug]),
-                'lastmod' => $c->updated_at ?? now(),
-            ]);
+        /*
+         * Include only brands used by active products.
+         */
+        $brandIds = Product::query()
+            ->active()
+            ->whereNotNull('brand_id')
+            ->distinct()
+            ->pluck('brand_id');
 
-            $brandUrls = $brands->map(fn($b) => [
-                'loc'     => route('products.byBrand', ['brandSlug' => $b->slug]),
-                'lastmod' => $b->updated_at ?? now(),
-            ]);
+        $brands = Brand::query()
+            ->whereIn('id', $brandIds)
+            ->whereNotNull('slug')
+            ->where('slug', '!=', '')
+            ->select(['id', 'slug', 'updated_at'])
+            ->orderByDesc('updated_at')
+            ->get();
 
-            $productUrls = $products->map(function ($p) {
-                // Default to ID route; prefer slug route if you’ve added it
-                $loc = route('products.show', $p->id);
-                if (Route::has('products.show.slug') && !empty($p->slug)) {
-                    $loc = route('products.show.slug', ['slug' => $p->slug]);
-                }
-                return [
-                    'loc'        => $loc,
-                    'lastmod'    => $p->updated_at ?? now(),
-                    // Optional hints (fine to keep)
-                    'changefreq' => 'daily',
-                    'priority'   => '0.9',
-                ];
-            });
+        /*
+         * Include only vendors used by active products.
+         *
+         * Your vendor public route currently uses the vendor route
+         * parameter, which defaults to the vendor ID.
+         */
+        $vendorIds = Product::query()
+            ->active()
+            ->whereNotNull('vendor_id')
+            ->distinct()
+            ->pluck('vendor_id');
 
-            // Render Blade view (make sure you used the safe XML declaration output)
-            return view('sitemap.xml', [
-                'urls' => $static->concat($catUrls)->concat($brandUrls)->concat($productUrls),
-            ])->render();
-        });
+        $vendors = Vendor::query()
+            ->whereIn('id', $vendorIds)
+            ->select(['id', 'slug', 'updated_at'])
+            ->orderByDesc('updated_at')
+            ->get();
 
-        return Response::make($xml, 200, ['Content-Type' => 'application/xml; charset=UTF-8']);
+        return response()
+            ->view('sitemap', compact(
+                'staticPages',
+                'products',
+                'categories',
+                'brands',
+                'vendors'
+            ))
+            ->header('Content-Type', 'application/xml; charset=UTF-8');
     }
 }
