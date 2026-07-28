@@ -27,6 +27,7 @@ use App\Http\Middleware\AdminMiddleware;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\SitemapController;
 use App\Services\TwilioService;
+use App\Http\Controllers\Auth\GoogleAuthController;
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -36,7 +37,14 @@ use App\Services\TwilioService;
 // Homepage
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
+//google auth
+Route::middleware('guest')->group(function () {
+    Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])
+        ->name('google.redirect');
 
+    Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])
+        ->name('google.callback');
+});
 
 //faq
 Route::view('/faq', 'pages.faq')->name('faq');
