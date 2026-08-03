@@ -22,7 +22,8 @@ class ProductController extends Controller
     {
         $this->middleware(['auth', AdminMiddleware::class])->only([
             'adminIndex', 'create', 'store', 'edit', 'update',
-            'destroy', 'updateStock', 'quickUpdate'
+            'destroy', 'updateStock', 'quickUpdate', 'import',
+            'importProductsWithImages'
         ]);
     }
 
@@ -733,25 +734,56 @@ class ProductController extends Controller
 
     public function import(Request $request)
     {
-        $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls,csv',
+        $validated = $request->validate([
+            'file' => [
+                'required',
+                'file',
+                'extensions:xlsx,xls,csv',
+                'mimes:xlsx,xls,csv',
+                'mimetypes:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/x-ole-storage,application/zip,text/csv,text/plain,application/csv',
+                'max:5120',
+            ],
         ]);
 
-        Excel::import(new ProductsImport, $request->file('file'));
-        return redirect()->back()->with('success', 'Products imported successfully!');
+        try {
+            Excel::import(new ProductsImport, $validated['file']);
+
+            return back()->with('success', 'Products imported successfully!');
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return back()->withErrors([
+                'file' => 'Import failed. Check that every row contains valid product data.',
+            ]);
+        }
     }
 
     public function importProductsWithImages(Request $request)
     {
-        $request->validate([
-            'excel_file' => 'required|file|mimes:xlsx,xls,csv',
+        $validated = $request->validate([
+            'excel_file' => [
+                'required',
+                'file',
+                'extensions:xlsx,xls,csv',
+                'mimes:xlsx,xls,csv',
+                'mimetypes:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/x-ole-storage,application/zip,text/csv,text/plain,application/csv',
+                'max:5120',
+            ],
         ]);
 
         try {
-            Excel::import(new ProductsWithImagesImport('products_import_images'), $request->file('excel_file'));
-            return redirect()->back()->with('success', 'Products with images imported successfully!');
-        } catch (\Exception $e) {
-            return redirect()->back()->withErrors(['error' => 'Import failed: ' . $e->getMessage()]);
+            Excel::import(
+                new ProductsWithImagesImport('products_import_images'),
+                $validated['excel_file']
+            );
+
+            return back()->with('success', 'Products with images imported successfully!');
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return back()->withErrors([
+                'excel_file' => 'Import failed. Check that every row contains valid product data.',
+            ]);
         }
     }
 }

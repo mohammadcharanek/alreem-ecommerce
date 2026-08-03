@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -14,9 +15,12 @@ class User extends Authenticatable implements MustVerifyEmail
     use HasFactory, Notifiable;
 
     /**
-     * The attributes that are mass assignable.
+     * Attributes allowed for mass assignment.
      *
-     * @var list<string>
+     * is_admin is intentionally omitted to prevent users from assigning
+     * administrator access through mass assignment.
+     *
+     * @var array<int, string>
      */
     protected $fillable = [
         'name',
@@ -28,9 +32,9 @@ class User extends Authenticatable implements MustVerifyEmail
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
+     * Attributes hidden from serialization.
      *
-     * @var list<string>
+     * @var array<int, string>
      */
     protected $hidden = [
         'password',
@@ -38,7 +42,7 @@ class User extends Authenticatable implements MustVerifyEmail
     ];
 
     /**
-     * Get the attributes that should be cast.
+     * Attribute casts.
      *
      * @return array<string, string>
      */
@@ -47,6 +51,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
         ];
     }
 
@@ -55,7 +60,25 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function wishlist(): BelongsToMany
     {
-        return $this->belongsToMany(Product::class, 'wishlists')
-            ->withTimestamps();
+        return $this->belongsToMany(
+            Product::class,
+            'wishlists'
+        )->withTimestamps();
+    }
+
+    /**
+     * Carts belonging to this user.
+     */
+    public function carts(): HasMany
+    {
+        return $this->hasMany(Cart::class);
+    }
+
+    /**
+     * Orders placed by this user.
+     */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
     }
 }

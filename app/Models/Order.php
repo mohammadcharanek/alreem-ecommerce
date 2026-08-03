@@ -2,10 +2,27 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Order extends Model
 {
+    use HasFactory;
+
+    public const STATUSES = [
+        'pending',
+        'partially_paid',
+        'completed',
+        'cancelled',
+    ];
+
+    /**
+     * Attributes allowed for mass assignment.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'user_id',
         'total_amount',
@@ -15,45 +32,101 @@ class Order extends Model
         'voucher_code',
     ];
 
-    const STATUSES = ['pending', 'partially_paid', 'completed', 'cancelled'];
+    /**
+     * Attribute casts.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'user_id' => 'integer',
+        'total_amount' => 'decimal:2',
+    ];
 
-    public function user()
+    /**
+     * User who placed this order.
+     */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function orderItems()
+    /**
+     * Items belonging to this order.
+     *
+     * Keep this relationship because the checkout controller and views
+     * currently use $order->items.
+     */
+    public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
     }
 
-    public function payments()
+    /**
+     * Backward-compatible alias for items().
+     */
+    public function orderItems(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
+    /**
+     * Payments recorded for this order.
+     */
+    public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
     }
 
     /**
-     * Calculate remaining balance for this order.
-     *
-     * @param  int|null  $excludePaymentId  Optional payment ID to exclude (used when editing a payment).
-     * @return float
+     * Calculate the amount already paid.
      */
-    public function remainingBalance($excludePaymentId = null)
+    public function paidAmount(?int $excludePaymentId = null): float
     {
-        // Start a fresh query for payments
         $query = $this->payments();
 
-        if ($excludePaymentId) {
-            $query->where('id', '!=', $excludePaymentId);
+        if ($excludePaymentId !== null) {
+            $query->where(
+                'id',
+                '!=',
+                $excludePaymentId,
+                'and'
+            );
         }
 
-        $paid = $query->sum('amount');
-
-        // Use bcsub for precise subtraction and avoid negative numbers
-        return max(0, (float) bcsub($this->total_amount, $paid, 2));
+        return round(
+            (float) $query->sum('amount'),
+            2
+        );
     }
-    public function items()
+
+    /**
+     * Calculate the remaining unpaid balance.
+     */
+    public function remainingBalance(
+        ?int $excludePaymentId = null
+    ): float {
+        $total = (float) $this->total_amount;
+        $paid = $this->paidAmount($excludePaymentId);
+
+        return round(
+            max(0, $total - $paid),
+            2
+        );
+    }
+
+    /**
+     * Determine whether this order is cancelled.
+     */
+    public function getIsCancelledAttribute(): bool
     {
-        return $this->hasMany(OrderItem::class);
+        return $this->status === 'cancelled';
+    }
+
+    /**
+     * Determine whether this order is completed.
+     */
+    public function getIsCompletedAttribute(): bool
+    {
+        return $this->status === 'completed';
     }
 }

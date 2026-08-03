@@ -2,13 +2,18 @@
     $filterPrefix = $filterPrefix ?? 'filters';
 @endphp
 
-<form method="GET" action="{{ url()->current() }}" class="space-y-5">
+<form method="GET"
+      action="{{ url()->current() }}"
+      data-product-filter-form
+      class="space-y-5">
     @if($q)
         <input type="hidden" name="q" value="{{ $q }}">
     @endif
     <input type="hidden" name="sort" value="{{ $sort }}">
 
-    <details open class="border-b border-gray-200 pb-5">
+    <details open
+             data-filter-section="{{ $filterPrefix }}-categories"
+             class="border-b border-gray-200 pb-5">
         <summary class="cursor-pointer list-none text-sm font-bold text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue">
             Categories
         </summary>
@@ -41,7 +46,9 @@
         </div>
     </details>
 
-    <details {{ count($selectedBrandIds) ? 'open' : '' }} class="border-b border-gray-200 pb-5">
+    <details {{ count($selectedBrandIds) ? 'open' : '' }}
+             data-filter-section="{{ $filterPrefix }}-brands"
+             class="border-b border-gray-200 pb-5">
         <summary class="cursor-pointer list-none text-sm font-bold text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue">
             Brands
         </summary>
@@ -65,7 +72,9 @@
         </div>
     </details>
 
-    <details {{ count($selectedVendorIds) ? 'open' : '' }} class="border-b border-gray-200 pb-5">
+    <details {{ count($selectedVendorIds) ? 'open' : '' }}
+             data-filter-section="{{ $filterPrefix }}-vendors"
+             class="border-b border-gray-200 pb-5">
         <summary class="cursor-pointer list-none text-sm font-bold text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue">
             Vendors
         </summary>
@@ -122,6 +131,7 @@
                     id="{{ $filterPrefix }}-min-price"
                     type="number"
                     name="min_price"
+                    data-product-price
                     value="{{ $minPrice }}"
                     min="0"
                     step="0.01"
@@ -136,6 +146,7 @@
                     id="{{ $filterPrefix }}-max-price"
                     type="number"
                     name="max_price"
+                    data-product-price
                     value="{{ $maxPrice }}"
                     min="0"
                     step="0.01"
@@ -147,14 +158,18 @@
         </div>
     </fieldset>
 
-    <div class="grid grid-cols-2 gap-3 pt-1">
-        <button type="submit"
-                class="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-blue px-4 text-sm font-bold text-white hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:ring-offset-2">
-            Apply filters
-        </button>
+    <div class="pt-1">
         <a href="{{ $clearFiltersUrl }}"
-           class="inline-flex min-h-11 items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-bold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:ring-offset-2">
-            Clear
+           data-product-filter-link
+           class="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-bold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:ring-offset-2">
+            Clear filters
         </a>
+
+        <noscript>
+            <button type="submit"
+                    class="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-brand-blue px-4 text-sm font-bold text-white hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:ring-offset-2">
+                Apply filters
+            </button>
+        </noscript>
     </div>
 </form>

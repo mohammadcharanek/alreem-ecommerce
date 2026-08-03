@@ -4,11 +4,25 @@ namespace App\Imports;
 
 use App\Models\Product;
 use App\Models\Category;
-use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Concerns\ToModel;
+use Maatwebsite\Excel\Concerns\WithBatchInserts;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Maatwebsite\Excel\Concerns\WithColumnLimit;
+use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\WithLimit;
+use Maatwebsite\Excel\Concerns\WithValidation;
+use Maatwebsite\Excel\Events\BeforeImport;
 
-class ProductsWithImagesImport implements ToModel, WithHeadingRow
+class ProductsWithImagesImport implements
+    ToModel,
+    WithBatchInserts,
+    WithChunkReading,
+    WithColumnLimit,
+    WithEvents,
+    WithHeadingRow,
+    WithLimit,
+    WithValidation
 {
     protected $imagesFolder;
 
@@ -56,5 +70,59 @@ if (file_exists($publicImagePath)) {
             'is_active'        => isset($row['is_active']) ? (bool)$row['is_active'] : true,
             'image'            => $imagePath,
         ]);
+    }
+
+    public function rules(): array
+    {
+        return [
+            '*.name' => ['required', 'string', 'max:255', 'not_regex:/^\s*=/'],
+            '*.description' => ['nullable', 'string', 'max:10000', 'not_regex:/^\s*=/'],
+            '*.price' => ['required', 'numeric', 'min:0.01', 'max:99999999.99'],
+            '*.discount_price' => ['nullable', 'numeric', 'min:0', 'lt:*.price'],
+            '*.stock' => ['nullable', 'integer', 'min:0', 'max:1000000'],
+            '*.category_id' => ['nullable', 'integer', 'exists:categories,id'],
+            '*.category_name' => ['nullable', 'string', 'max:255', 'not_regex:/^\s*=/'],
+            '*.image' => [
+                'nullable',
+                'string',
+                'max:255',
+                'not_regex:/^\s*=/',
+                'regex:/\A(?!.*\.\.)[A-Za-z0-9][A-Za-z0-9._ -]*\.(?:jpe?g|png|webp)\z/i',
+            ],
+            '*.meta_title' => ['nullable', 'string', 'max:70', 'not_regex:/^\s*=/'],
+            '*.meta_description' => ['nullable', 'string', 'max:500', 'not_regex:/^\s*=/'],
+            '*.is_active' => ['nullable', 'boolean'],
+        ];
+    }
+
+    public function limit(): int
+    {
+        return 5000;
+    }
+
+    public function endColumn(): string
+    {
+        return 'Z';
+    }
+
+    public function chunkSize(): int
+    {
+        return 250;
+    }
+
+    public function batchSize(): int
+    {
+        return 250;
+    }
+
+    public function registerEvents(): array
+    {
+        return [
+            BeforeImport::class => static function (BeforeImport $event): void {
+                if ($event->reader->getDelegate()->getSheetCount() > 5) {
+                    throw new \RuntimeException('The spreadsheet contains too many worksheets.');
+                }
+            },
+        ];
     }
 }

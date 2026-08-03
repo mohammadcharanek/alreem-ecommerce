@@ -60,7 +60,18 @@
 @section('robots', count(request()->except('page')) > 0 ? 'noindex,follow' : 'index,follow')
 
 @section('content')
-<div class="space-y-6">
+<div data-product-listing class="relative space-y-6">
+    <div
+        data-product-filter-loading
+        class="pointer-events-none fixed inset-x-0 top-0 z-[70] hidden"
+        role="status"
+        aria-live="polite"
+    >
+        <div class="h-1 w-full overflow-hidden bg-sky-100">
+            <div class="h-full w-1/3 animate-pulse bg-brand-blue"></div>
+        </div>
+        <span class="sr-only">Updating products…</span>
+    </div>
     {{-- Breadcrumbs --}}
     <nav aria-label="Breadcrumb" class="text-sm text-gray-500">
         <ol class="flex flex-wrap items-center gap-2">
@@ -103,7 +114,10 @@
     </header>
 
     {{-- Search and sort toolbar --}}
-    <form method="GET" action="{{ url()->current() }}" class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+    <form method="GET"
+          action="{{ url()->current() }}"
+          data-product-filter-form
+          class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
         @foreach($selectedCategoryIds as $categoryId)
             <input type="hidden" name="category[]" value="{{ $categoryId }}">
         @endforeach
@@ -123,7 +137,7 @@
             <input type="hidden" name="max_price" value="{{ $maxPrice }}">
         @endif
 
-        <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px_auto] md:items-end">
+        <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px] md:items-end">
             <div>
                 <label for="product-search" class="mb-1.5 block text-sm font-semibold text-gray-800">
                     Search products
@@ -139,6 +153,7 @@
                         id="product-search"
                         type="search"
                         name="q"
+                        data-product-search
                         value="{{ $q }}"
                         placeholder="Search by product name, SKU, or description"
                         autocomplete="off"
@@ -147,6 +162,7 @@
                     @if($q)
                         <a href="{{ $searchClearUrl }}"
                            class="absolute inset-y-0 right-2 my-auto inline-flex h-8 items-center rounded-lg px-2 text-xs font-semibold text-gray-500 hover:bg-gray-100 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-blue"
+                           data-product-filter-link
                            aria-label="Clear product search">
                             Clear
                         </a>
@@ -173,15 +189,17 @@
                 </select>
             </div>
 
-            <button type="submit"
-                    class="inline-flex h-11 items-center justify-center rounded-xl bg-brand-blue px-5 text-sm font-bold text-white shadow-sm transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:ring-offset-2">
-                Search
-            </button>
+            <noscript>
+                <button type="submit"
+                        class="inline-flex h-11 items-center justify-center rounded-xl bg-brand-blue px-5 text-sm font-bold text-white shadow-sm transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:ring-offset-2">
+                    Search
+                </button>
+            </noscript>
         </div>
     </form>
 
     {{-- Mobile filters: native and usable without JavaScript --}}
-    <details class="group rounded-2xl border border-gray-200 bg-white shadow-sm lg:hidden">
+    <details data-product-mobile-filters class="group rounded-2xl border border-gray-200 bg-white shadow-sm lg:hidden">
         <summary class="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 font-semibold text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue">
             <span class="inline-flex items-center gap-2">
                 <svg class="h-5 w-5 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -210,7 +228,8 @@
                 <span class="mr-1 text-sm font-semibold text-gray-800">Active filters:</span>
 
                 @if($q)
-                    <a href="{{ $removeFilterUrl('q') }}"
+                    <a data-product-filter-link
+                       href="{{ $removeFilterUrl('q') }}"
                        class="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-brand-blue hover:text-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue">
                         Search: “{{ $q }}” <span aria-hidden="true">×</span>
                         <span class="sr-only">Remove search filter</span>
@@ -218,7 +237,8 @@
                 @endif
 
                 @foreach($selectedCategoryIds as $categoryId)
-                    <a href="{{ $removeFilterUrl('category', $categoryId) }}"
+                    <a data-product-filter-link
+                       href="{{ $removeFilterUrl('category', $categoryId) }}"
                        class="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-brand-blue hover:text-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue">
                         {{ $filterLabels['categories'][$categoryId] ?? 'Category' }} <span aria-hidden="true">×</span>
                         <span class="sr-only">Remove category filter</span>
@@ -226,7 +246,8 @@
                 @endforeach
 
                 @foreach($selectedBrandIds as $brandId)
-                    <a href="{{ $removeFilterUrl('brand', $brandId) }}"
+                    <a data-product-filter-link
+                       href="{{ $removeFilterUrl('brand', $brandId) }}"
                        class="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-brand-blue hover:text-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue">
                         {{ $filterLabels['brands'][$brandId] ?? 'Brand' }} <span aria-hidden="true">×</span>
                         <span class="sr-only">Remove brand filter</span>
@@ -234,7 +255,8 @@
                 @endforeach
 
                 @foreach($selectedVendorIds as $vendorId)
-                    <a href="{{ $removeFilterUrl('vendor', $vendorId) }}"
+                    <a data-product-filter-link
+                       href="{{ $removeFilterUrl('vendor', $vendorId) }}"
                        class="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-brand-blue hover:text-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue">
                         {{ $filterLabels['vendors'][$vendorId] ?? 'Vendor' }} <span aria-hidden="true">×</span>
                         <span class="sr-only">Remove vendor filter</span>
@@ -242,7 +264,8 @@
                 @endforeach
 
                 @if($stockFilter)
-                    <a href="{{ $removeFilterUrl('stock') }}"
+                    <a data-product-filter-link
+                       href="{{ $removeFilterUrl('stock') }}"
                        class="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-brand-blue hover:text-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue">
                         {{ $stockFilter === 'in_stock' ? 'In stock' : 'Out of stock' }} <span aria-hidden="true">×</span>
                         <span class="sr-only">Remove availability filter</span>
@@ -250,7 +273,8 @@
                 @endif
 
                 @if($minPrice !== null || $maxPrice !== null)
-                    <a href="{{ $makeQueryUrl(array_diff_key(request()->query(), array_flip(['min_price', 'max_price']))) }}"
+                    <a data-product-filter-link
+                       href="{{ $makeQueryUrl(array_diff_key(request()->query(), array_flip(['min_price', 'max_price']))) }}"
                        class="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-brand-blue hover:text-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue">
                         Price:
                         @if($minPrice !== null && $maxPrice !== null)
@@ -266,6 +290,7 @@
                 @endif
 
                 <a href="{{ $clearFiltersUrl }}"
+                   data-product-filter-link
                    class="ml-auto text-sm font-bold text-brand-blue hover:underline focus:outline-none focus:ring-2 focus:ring-brand-blue focus:ring-offset-2">
                     Clear all
                 </a>
@@ -309,7 +334,7 @@
                 </div>
 
                 @if($products->hasPages())
-                    <nav class="mt-8 border-t border-gray-200 pt-6" aria-label="Product pagination">
+                    <nav data-product-pagination class="mt-8 border-t border-gray-200 pt-6" aria-label="Product pagination">
                         {{ $products->links() }}
                     </nav>
                 @endif
@@ -327,6 +352,7 @@
                     </p>
                     <div class="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
                         <a href="{{ $clearFiltersUrl }}"
+                           data-product-filter-link
                            class="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-blue px-5 text-sm font-bold text-white hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:ring-offset-2">
                             Clear filters
                         </a>

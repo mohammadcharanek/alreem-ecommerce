@@ -12,7 +12,10 @@
 
        <form action="{{ route('products.import.images') }}" method="POST" enctype="multipart/form-data">
     @csrf
-    <input type="file" name="excel_file" required>
+    <input type="file" name="excel_file" accept=".xlsx,.xls,.csv" required>
+    <p class="mt-2 text-sm text-gray-600">
+        Upload an XLSX, XLS, or CSV file up to 5 MB, 5 worksheets, and 5,000 data rows per worksheet.
+    </p>
     <button type="submit">Import Products with Images</button>
 </form>
     </div>

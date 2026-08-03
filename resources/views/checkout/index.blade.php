@@ -122,12 +122,15 @@
 <div class="mb-4">
     <label class="block font-medium mb-1" for="phone">Phone Number</label>
     <input
-        type="text"
+        type="tel"
         name="phone"
         id="phone"
         value="{{ old('phone', auth()->user()->phone ?? '') }}"
         placeholder="03 123 456"
+        inputmode="tel"
+        autocomplete="tel"
         class="w-full border rounded px-3 py-2"
+        required
     >
     @error('phone')
         <span class="text-red-600 text-sm">{{ $message }}</span>
@@ -141,6 +144,7 @@
                 name="shipping_address"
                 id="shipping_address"
                 rows="3"
+                autocomplete="street-address"
                 class="w-full border rounded px-3 py-2"
                 required
             >{{ old('shipping_address') }}</textarea>

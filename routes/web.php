@@ -26,7 +26,7 @@ use App\Http\Controllers\Admin\{
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\SitemapController;
-use App\Services\TwilioService;
+use App\Services\TwilioWhatsAppService;
 use App\Http\Controllers\Auth\GoogleAuthController;
 /*
 |--------------------------------------------------------------------------
@@ -90,11 +90,6 @@ Route::get('/products/category/{slug}', [ProductController::class, 'productsByCa
 // ->where('slug', '[A-Za-z0-9\-]+')
 Route::get('/products/brand/{brandSlug}', [ProductController::class, 'byBrand'])->name('products.byBrand');
 Route::get('/products/vendor/{vendor}', [ProductController::class, 'productsByVendor'])->name('products.byVendor');
-
-// Product import (⚠️ maybe should be admin-only, but left public for now)
-Route::get('/products/import', fn () => view('products.import'))->name('products.import.form');
-Route::post('/products/import', [ProductController::class, 'import'])->name('products.import');
-Route::post('/products/import-images', [ProductController::class, 'importProductsWithImages'])->name('products.import.images');
 
 // Contact
 Route::get('/contact', [ContactController::class, 'show'])->name('contact.show');
@@ -196,6 +191,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', AdminMiddleware::cla
     Route::delete('/payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy');
 });
 
+// Keep the existing import URLs and route names, but require administrator access.
+Route::middleware(['auth', AdminMiddleware::class, 'throttle:5,1'])->group(function () {
+    Route::get('/products/import', fn () => view('products.import'))->name('products.import.form');
+    Route::post('/products/import', [ProductController::class, 'import'])->name('products.import');
+    Route::post('/products/import-images', [ProductController::class, 'importProductsWithImages'])->name('products.import.images');
+});
+
 /*
 |--------------------------------------------------------------------------
 | Debug / Test Routes
@@ -218,46 +220,32 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', AdminMiddleware::cla
 */
 
 if (app()->environment('local')) {
-    Route::get('/test-twilio', function (TwilioService $twilio) {
-        $sent = $twilio->sendAdminSms(
-            'Test message from Laravel Al Reem Expo.'
+    Route::get('/test-whatsapp', function (
+        TwilioWhatsAppService $whatsapp
+    ) {
+        $adminPhone = (string) config(
+            'services.twilio.admin_whatsapp'
         );
 
-        return $sent
-            ? 'Twilio SMS sent.'
-            : 'Twilio SMS failed. Check laravel.log.';
-    });
-
-    Route::get('/send-test-email', function () {
-        try {
-            Mail::raw(
-                'This is a test email sent from Laravel.',
-                function ($message) {
-                    $message
-                        ->to('alreemexpo1@gmail.com')
-                        ->subject('Laravel SMTP Test');
-                }
-            );
-
-            return 'Email sent successfully.';
-        } catch (\Throwable $e) {
-            report($e);
-
-            return response('Email test failed.', 500);
+        if ($adminPhone === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'TWILIO_ADMIN_WHATSAPP is missing.',
+            ], 422);
         }
+
+        $sent = $whatsapp->send(
+            $adminPhone,
+            'Test message from Al Reem Expo Laravel application.'
+        );
+
+        return response()->json([
+            'success' => $sent,
+            'message' => $sent
+                ? 'WhatsApp message submitted to Twilio.'
+                : 'WhatsApp message failed. Check laravel.log and Twilio logs.',
+        ], $sent ? 200 : 500);
     });
-
-    Route::get(
-        '/check-mail-config',
-        fn () => config('mail.mailers.smtp.password')
-            ? 'Password loaded'
-            : 'Password not loaded'
-    );
-
-    Route::get(
-        '/whatsapp-test',
-        [CheckoutController::class, 'sendWhatsAppTest']
-    );
 }
 
 /*

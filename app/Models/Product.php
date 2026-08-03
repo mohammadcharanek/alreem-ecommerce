@@ -2,14 +2,20 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class Product extends Model
 {
+    /**
+     * Attributes allowed for mass assignment.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'name',
         'slug',
@@ -30,34 +36,49 @@ class Product extends Model
         'barcode',
     ];
 
+    /**
+     * Attribute casts.
+     *
+     * @var array<string, string>
+     */
     protected $casts = [
-        'price'           => 'float',
-        'discount_price'  => 'float',
-        'stock'           => 'int',
-        'is_active'       => 'bool',
-        'featured'        => 'bool',
-        'is_new'          => 'bool',
-        'rating'          => 'float',
+        'price' => 'float',
+        'discount_price' => 'float',
+        'stock' => 'integer',
+        'is_active' => 'boolean',
+        'featured' => 'boolean',
+        'is_new' => 'boolean',
+        'rating' => 'float',
     ];
 
-    // Expose computed price when casting to array/json (optional)
-    protected $appends = ['display_price'];
+    /**
+     * Accessors included when converting the model to an array or JSON.
+     *
+     * @var array<int, string>
+     */
+    protected $appends = [
+        'display_price',
+    ];
 
-    /* ----------------------------- Relationships ----------------------------- */
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
 
     public function category(): BelongsTo
     {
-       return $this->belongsTo(\App\Models\Category::class, 'category_id');
+        return $this->belongsTo(Category::class, 'category_id');
     }
 
     public function brand(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Brand::class);
+        return $this->belongsTo(Brand::class, 'brand_id');
     }
 
     public function vendor(): BelongsTo
     {
-        return $this->belongsTo(Vendor::class);
+        return $this->belongsTo(Vendor::class, 'vendor_id');
     }
 
     public function images(): HasMany
@@ -67,7 +88,10 @@ class Product extends Model
 
     public function wishlistedByUsers(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'wishlists')->withTimestamps();
+        return $this->belongsToMany(
+            User::class,
+            'wishlists'
+        )->withTimestamps();
     }
 
     public function stockMovements(): HasMany
@@ -85,40 +109,74 @@ class Product extends Model
         return $this->hasMany(CartItem::class);
     }
 
-    /* -------------------------------- Accessors ------------------------------ */
+    /*
+    |--------------------------------------------------------------------------
+    | Accessors
+    |--------------------------------------------------------------------------
+    */
 
-    // Prefer this everywhere in views for price display.
+    /**
+     * Return the effective selling price.
+     */
     public function getDisplayPriceAttribute(): float
     {
-        return (float) ($this->has_discount ? $this->discount_price : $this->price);
+        return $this->has_discount
+            ? (float) $this->discount_price
+            : (float) $this->price;
     }
 
+    /**
+     * Determine whether the product has a valid discount.
+     */
     public function getHasDiscountAttribute(): bool
     {
-        return !is_null($this->discount_price)
+        return $this->discount_price !== null
             && (float) $this->discount_price > 0
             && (float) $this->discount_price < (float) $this->price;
     }
 
+    /**
+     * Return the discount percentage.
+     */
     public function getDiscountPercentageAttribute(): int
     {
-        if (!$this->has_discount || (float) $this->price <= 0) {
+        if (
+            ! $this->has_discount
+            || (float) $this->price <= 0
+        ) {
             return 0;
         }
 
-        return (int) round((1 - ((float) $this->discount_price / (float) $this->price)) * 100);
+        return (int) round(
+            (
+                1
+                - (
+                    (float) $this->discount_price
+                    / (float) $this->price
+                )
+            ) * 100
+        );
     }
 
+    /**
+     * Determine whether the product is in stock.
+     */
     public function getIsInStockAttribute(): bool
     {
         return (int) $this->stock > 0;
     }
 
+    /**
+     * Return stock without allowing negative values.
+     */
     public function getAvailableStockAttribute(): int
     {
         return max(0, (int) $this->stock);
     }
 
+    /**
+     * Return the first product image URL.
+     */
     public function getThumbnailUrlAttribute(): ?string
     {
         $image = $this->relationLoaded('images')
@@ -128,143 +186,284 @@ class Product extends Model
         return $image?->url;
     }
 
-    /* ---------------------------------- Scopes ------------------------------- */
+    /*
+    |--------------------------------------------------------------------------
+    | Query Scopes
+    |--------------------------------------------------------------------------
+    */
 
-    public function scopeActive($query)
+    /**
+     * Include only active products.
+     */
+    public function scopeActive(Builder $query): Builder
     {
-        return $query->where('is_active', true);
+        return $query->where(
+            'is_active',
+            '=',
+            true,
+            'and'
+        );
     }
 
-    public function scopeSearch($query, ?string $q)
-    {
-        if (!$q) return $query;
+    /**
+     * Search products by name, SKU, or description.
+     */
+    public function scopeSearch(
+        Builder $query,
+        ?string $search
+    ): Builder {
+        $search = trim((string) $search);
 
-        return $query->where(function ($qq) use ($q) {
-            $qq->where('name', 'like', "%{$q}%")
-               ->orWhere('sku', 'like', "%{$q}%")
-               ->orWhere('description', 'like', "%{$q}%");
-        });
+        if ($search === '') {
+            return $query;
+        }
+
+        return $query->where(
+            function (Builder $subQuery) use ($search): void {
+                $subQuery
+                    ->where(
+                        'name',
+                        'like',
+                        '%' . $search . '%',
+                        'and'
+                    )
+                    ->orWhere(
+                        'sku',
+                        'like',
+                        '%' . $search . '%'
+                    )
+                    ->orWhere(
+                        'description',
+                        'like',
+                        '%' . $search . '%'
+                    );
+            },
+            null,
+            null,
+            'and'
+        );
     }
 
-    /* ------------------------------- Lifecycle ------------------------------- */
+    /*
+    |--------------------------------------------------------------------------
+    | Model Events
+    |--------------------------------------------------------------------------
+    */
 
-    protected static function boot()
+    protected static function booted(): void
     {
-        parent::boot();
+        static::creating(
+            function (Product $product): void {
+                if (blank($product->slug)) {
+                    $product->slug = static::makeUniqueSlug(
+                        (string) $product->name
+                    );
+                } else {
+                    $product->slug = static::ensureUniqueSanitizedSlug(
+                        $product->slug,
+                        null,
+                        (string) $product->name
+                    );
+                }
 
-        static::creating(function (Product $product) {
-            // Slug: create once (stable URL)
-            if (blank($product->slug)) {
-                $product->slug = static::makeUniqueSlug($product->name);
-            } else {
-                $product->slug = static::ensureUniqueSanitizedSlug($product->slug, null, $product->name);
+                if (blank($product->barcode)) {
+                    $product->barcode = static::generateBarcode();
+                }
+
+                static::ensureMeta($product);
             }
+        );
 
-            if (empty($product->barcode)) {
-                $product->barcode = self::generateBarcode();
+        static::updating(
+            function (Product $product): void {
+                if ($product->isDirty('slug')) {
+                    $product->slug = static::ensureUniqueSanitizedSlug(
+                        $product->slug,
+                        (int) $product->id,
+                        (string) $product->name
+                    );
+                } elseif (blank($product->slug)) {
+                    $product->slug = static::makeUniqueSlug(
+                        (string) $product->name,
+                        (int) $product->id
+                    );
+                }
+
+                static::ensureMeta($product);
             }
-            self::ensureMeta($product);
-        });
-
-        static::updating(function (Product $product) {
-            // If user edited slug, sanitize + ensure unique. If they didn't, keep current slug (stability).
-            if ($product->isDirty('slug')) {
-                $product->slug = static::ensureUniqueSanitizedSlug($product->slug, $product->id, $product->name);
-            } elseif (blank($product->slug)) {
-                // Edge case: slug got blanked programmatically
-                $product->slug = static::makeUniqueSlug($product->name, $product->id);
-            }
-
-            self::ensureMeta($product);
-        });
+        );
     }
 
-    /* --------------------------------- Helpers ------------------------------- */
+    /*
+    |--------------------------------------------------------------------------
+    | Helpers
+    |--------------------------------------------------------------------------
+    */
 
+    /**
+     * Generate a unique 13-digit product barcode.
+     */
     public static function generateBarcode(): string
     {
-        return str_pad((string) mt_rand(1, 9999999999999), 13, '0', STR_PAD_LEFT);
+        do {
+            $barcode = str_pad(
+                (string) random_int(0, 9_999_999_999_999),
+                13,
+                '0',
+                STR_PAD_LEFT
+            );
+
+            $exists = static::query()
+                ->where(
+                    'barcode',
+                    '=',
+                    $barcode,
+                    'and'
+                )
+                ->exists();
+        } while ($exists);
+
+        return $barcode;
     }
 
     /**
-     * Ensure meta fields are auto-filled if left blank (never overwrites non-empty).
+     * Fill SEO metadata when it is empty.
      */
-    protected static function ensureMeta(Product $p): void
+    protected static function ensureMeta(Product $product): void
     {
-        if (blank($p->meta_title)) {
-            $p->meta_title = self::makeMetaTitle($p->name ?? '');
+        if (blank($product->meta_title)) {
+            $product->meta_title = static::makeMetaTitle(
+                (string) $product->name
+            );
         }
 
-        if (blank($p->meta_description)) {
-            $source = $p->description ?: ($p->name ?? '');
-            $p->meta_description = self::makeMetaDescription($source);
+        if (blank($product->meta_description)) {
+            $source = filled($product->description)
+                ? (string) $product->description
+                : (string) $product->name;
+
+            $product->meta_description =
+                static::makeMetaDescription($source);
         }
     }
 
+    /**
+     * Create an SEO title capped at 60 characters.
+     */
     public static function makeMetaTitle(string $name): string
     {
-        // Trim and cap ~60 chars
-        return Str::limit(trim($name), 60, '');
-    }
-
-    public static function makeMetaDescription(?string $text): string
-    {
-        // Strip HTML, collapse whitespace, cap ~160 chars
-        $plain = trim(preg_replace('/\s+/', ' ', strip_tags((string) $text)));
-        return Str::limit($plain, 160, '');
+        return Str::limit(
+            trim($name),
+            60,
+            ''
+        );
     }
 
     /**
-     * Create a unique slug from a name. If $ignoreId is given, ignore that row (for updates).
+     * Create an SEO description capped at 160 characters.
      */
-    public static function makeUniqueSlug(string $name, $ignoreId = null): string
-    {
-        $base = Str::slug($name) ?: 'product';
-        $slug = $base;
-        $i = 1;
+    public static function makeMetaDescription(
+        ?string $text
+    ): string {
+        $plainText = strip_tags((string) $text);
 
-        while (static::where('slug', $slug)
-            ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
-            ->exists()) {
-            $slug = $base . '-' . $i++;
+        $plainText = preg_replace(
+            '/\s+/',
+            ' ',
+            $plainText
+        ) ?? '';
+
+        return Str::limit(
+            trim($plainText),
+            160,
+            ''
+        );
+    }
+
+    /**
+     * Create a unique slug from a product name.
+     */
+    public static function makeUniqueSlug(
+        string $name,
+        ?int $ignoreId = null
+    ): string {
+        $base = Str::slug($name);
+
+        if ($base === '') {
+            $base = 'product';
+        }
+
+        $slug = $base;
+        $suffix = 1;
+
+        while (static::slugExists($slug, $ignoreId)) {
+            $slug = $base . '-' . $suffix;
+            $suffix++;
         }
 
         return $slug;
     }
 
     /**
-     * Sanitize a provided slug and ensure it's unique; if empty, fall back to name.
+     * Sanitize a supplied slug and ensure it is unique.
      */
-    protected static function ensureUniqueSanitizedSlug(?string $slug, $ignoreId = null, ?string $fallbackName = null): string
-    {
+    protected static function ensureUniqueSanitizedSlug(
+        ?string $slug,
+        ?int $ignoreId = null,
+        ?string $fallbackName = null
+    ): string {
         $slug = Str::slug((string) $slug);
 
-        if (blank($slug)) {
-            return static::makeUniqueSlug((string) $fallbackName, $ignoreId);
+        if ($slug === '') {
+            return static::makeUniqueSlug(
+                (string) $fallbackName,
+                $ignoreId
+            );
         }
 
-        // If the sanitized slug already exists, suffix with -n
-        if (static::where('slug', $slug)
-            ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
-            ->exists()) {
-
-            $base = $slug;
-            $i = 1;
-            while (static::where('slug', $base . '-' . $i)
-                ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
-                ->exists()) {
-                $i++;
-            }
-            $slug = $base . '-' . $i;
+        if (! static::slugExists($slug, $ignoreId)) {
+            return $slug;
         }
 
-        return $slug;
+        $base = $slug;
+        $suffix = 1;
+
+        do {
+            $candidate = $base . '-' . $suffix;
+            $suffix++;
+        } while (
+            static::slugExists(
+                $candidate,
+                $ignoreId
+            )
+        );
+
+        return $candidate;
     }
 
-    /* -------------------------- Inventory model note ------------------------- */
     /**
-     * You decrement the `stock` column during checkout (and log StockMovement),
-     * so `stock` is the source of truth for availability. Avoid mixing it with a
-     * computed sum of movements in business logic.
+     * Determine whether a slug is already used.
      */
+    protected static function slugExists(
+        string $slug,
+        ?int $ignoreId = null
+    ): bool {
+        $query = static::query()->where(
+            'slug',
+            '=',
+            $slug,
+            'and'
+        );
+
+        if ($ignoreId !== null) {
+            $query->where(
+                'id',
+                '!=',
+                $ignoreId,
+                'and'
+            );
+        }
+
+        return $query->exists();
+    }
 }
