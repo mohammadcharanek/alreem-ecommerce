@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Models\Order;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -11,11 +12,11 @@ use Illuminate\Notifications\Notifiable;
 class OrderPlaced extends Notification
 {
     use Queueable;
-    public $order;
+    public Order $order;
     /**
      * Create a new notification instance.
      */
-    public function __construct($order)
+    public function __construct(Order $order)
     {
         $this->order = $order;
     }
@@ -38,7 +39,7 @@ class OrderPlaced extends Notification
         return (new MailMessage)
             ->subject('Order Confirmation')
             ->line('Thank you for your order!')
-            ->action('View Order', url('/orders/' . $this->order->id));
+            ->action('View Order', route('checkout.thankyou', $this->order));
     }
 
     /**

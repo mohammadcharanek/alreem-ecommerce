@@ -17,7 +17,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Throwable;
@@ -442,14 +441,7 @@ class CheckoutController extends Controller
             $this->sendOrderEmail($order);
             $this->sendOrderWhatsAppNotifications($order);
 
-            $signedUrl = URL::signedRoute(
-                'checkout.thankyou',
-                [
-                    'oid' => $order->id,
-                ]
-            );
-
-            return redirect()->to($signedUrl);
+            return redirect()->route('checkout.thankyou', $order);
         } catch (DomainException $exception) {
             Log::warning('Order could not be completed.', [
                 'user_id' => $userId,
@@ -904,44 +896,15 @@ class CheckoutController extends Controller
      * Display the order thank-you page.
      */
     public function thankYou(
-        Request $request
-    ): View|RedirectResponse {
-        $orderId = $request->route('oid')
-            ?? session('order_id');
+        Request $request,
+        Order $order
+    ): View {
+        $this->authorize('view', $order);
 
-        if (! $orderId) {
-            return redirect()
-                ->route('home')
-                ->with('error', 'No order found.');
-        }
-
-        /** @var Order|null $order */
-        $order = Order::query()
-            ->with([
-                'user',
-                'items.product',
-            ])
-            ->find($orderId);
-
-        if (! $order) {
-            return redirect()
-                ->route('home')
-                ->with('error', 'Order not found.');
-        }
-
-        $isSigned = $request->hasValidSignature();
-
-        $isOwner = Auth::check()
-            && (int) Auth::id() === (int) $order->user_id;
-
-        if (! $isSigned && ! $isOwner) {
-            return redirect()
-                ->route('home')
-                ->with(
-                    'error',
-                    'Unauthorized access to this order.'
-                );
-        }
+        $order->load([
+            'user',
+            'items.product',
+        ]);
 
         return view(
             'checkout.thankyou',

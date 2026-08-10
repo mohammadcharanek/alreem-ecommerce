@@ -70,7 +70,9 @@ Route::get('/returns', [PageController::class, 'returns'])->name('returns');
 Route::get('/sitemap.xml', [SitemapController::class, 'sitemap'])
     ->name('sitemap.xml');
 // Newsletter subscription
-Route::post('/newsletter', [NewsletterController::class, 'store'])->name('newsletter.subscribe');
+Route::post('/newsletter', [NewsletterController::class, 'store'])
+    ->middleware('throttle:newsletter')
+    ->name('newsletter.subscribe');
 
 // Public product browsing
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
@@ -93,12 +95,9 @@ Route::get('/products/vendor/{vendor}', [ProductController::class, 'productsByVe
 
 // Contact
 Route::get('/contact', [ContactController::class, 'show'])->name('contact.show');
-Route::post('/contact', [ContactController::class, 'submit'])->name('contact.submit');
-
-// Thank you page
-Route::get('/checkout/thank-you/{oid}', [CheckoutController::class, 'thankYou'])
-    ->middleware('signed')
-    ->name('checkout.thankyou');
+Route::post('/contact', [ContactController::class, 'submit'])
+    ->middleware('throttle:contact')
+    ->name('contact.submit');
 
 /*
 |--------------------------------------------------------------------------
@@ -120,11 +119,18 @@ Route::middleware('auth')->group(function () {
     Route::get('/my-orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/my-orders/completed', [OrderController::class, 'completed'])->name('orders.completed');
     Route::get('/my-orders/cancelled', [OrderController::class, 'cancelled'])->name('orders.cancelled');
-    Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
+    Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel'])
+        ->middleware('throttle:order-actions')
+        ->name('orders.cancel');
 
     // Checkout
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
-    Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::post('/checkout', [CheckoutController::class, 'store'])
+        ->middleware('throttle:checkout')
+        ->name('checkout.store');
+    Route::get('/checkout/thank-you/{order}', [CheckoutController::class, 'thankYou'])
+        ->middleware('can:view,order')
+        ->name('checkout.thankyou');
 
     // User Profile & Dashboard
     Route::middleware('verified')->group(function () {

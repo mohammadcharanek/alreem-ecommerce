@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 
 use App\Models\ProductImage;
 use App\Models\Category;
@@ -23,6 +26,35 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        RateLimiter::for('contact', fn (Request $request) => [
+            Limit::perMinute(5)->by('contact-minute:'.$request->ip()),
+            Limit::perHour(20)->by('contact-hour:'.$request->ip()),
+        ]);
+
+        RateLimiter::for('newsletter', fn (Request $request) => [
+            Limit::perMinute(5)->by('newsletter-minute:'.$request->ip()),
+            Limit::perHour(20)->by('newsletter-hour:'.$request->ip()),
+        ]);
+
+        RateLimiter::for('registration', fn (Request $request) => [
+            Limit::perMinute(5)->by('registration-minute:'.$request->ip()),
+            Limit::perHour(20)->by('registration-hour:'.$request->ip()),
+        ]);
+
+        RateLimiter::for('password-reset', fn (Request $request) => [
+            Limit::perMinute(5)->by('password-reset-minute:'.$request->ip()),
+            Limit::perHour(20)->by('password-reset-hour:'.$request->ip()),
+        ]);
+
+        RateLimiter::for('checkout', fn (Request $request) => [
+            Limit::perMinute(3)->by('checkout-minute:'.($request->user()?->id ?? $request->ip())),
+            Limit::perHour(10)->by('checkout-hour:'.($request->user()?->id ?? $request->ip())),
+        ]);
+
+        RateLimiter::for('order-actions', fn (Request $request) =>
+            Limit::perMinute(10)->by('order-actions:'.($request->user()?->id ?? $request->ip()))
+        );
+
         /**
          * Route-model binding for product images used by:
          *   /admin/products/images/{image}
