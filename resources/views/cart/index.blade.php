@@ -580,7 +580,7 @@
                             </a>
                         @else
                             <a
-                                href="{{ route('login') }}"
+                                href="{{ route('checkout.index') }}"
                                 data-checkout-link
                                 class="mt-7 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                             >

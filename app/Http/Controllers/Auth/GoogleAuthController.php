@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Cart;
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -91,7 +93,20 @@ class GoogleAuthController extends Controller
 
             request()->session()->regenerate();
 
-            return redirect()->intended('/');
+            /*
+             * Guests keep their cart in the session while authenticated
+             * customers use the database cart. Merge the guest cart now so
+             * products do not disappear after Google authentication.
+             */
+            $this->mergeSessionCartIntoDatabaseCart();
+
+            /*
+             * If Laravel's auth middleware remembered a protected destination
+             * such as /checkout, return there. Otherwise use the dashboard.
+             */
+            return redirect()->intended(
+                route('dashboard', absolute: false)
+            );
         } catch (Throwable $exception) {
             report($exception);
 
@@ -106,5 +121,101 @@ class GoogleAuthController extends Controller
                     'google' => 'Google login failed. Please try again.',
                 ]);
         }
+    }
+
+    /**
+     * Move the guest session cart into the authenticated user's active
+     * database cart.
+     */
+    protected function mergeSessionCartIntoDatabaseCart(): void
+    {
+        $sessionCart = session()->get('cart', []);
+
+        if (
+            !Auth::check() ||
+            empty($sessionCart) ||
+            !is_array($sessionCart)
+        ) {
+            return;
+        }
+
+        $cart = Cart::firstOrCreate(
+            [
+                'user_id' => Auth::id(),
+                'status' => 'active',
+            ],
+            [
+                'total_amount' => 0,
+            ]
+        );
+
+        $products = Product::whereIn('id', array_keys($sessionCart))
+            ->get()
+            ->keyBy('id');
+
+        foreach ($sessionCart as $productId => $quantity) {
+            $product = $products->get((int) $productId);
+
+            if (!$product) {
+                continue;
+            }
+
+            $stock = max(0, (int) ($product->stock ?? 0));
+
+            if ($stock <= 0) {
+                continue;
+            }
+
+            $quantity = max(1, (int) $quantity);
+
+            $item = $cart->items()->firstOrNew([
+                'product_id' => $product->id,
+            ]);
+
+            $currentQuantity = (int) ($item->quantity ?? 0);
+
+            $item->quantity = min(
+                $currentQuantity + $quantity,
+                $stock
+            );
+            $item->price = $this->priceFor($product);
+            $item->save();
+        }
+
+        $this->refreshCartTotal($cart);
+
+        /*
+         * Clear the session cart only after it has been merged successfully,
+         * preventing the same quantities from being added again.
+         */
+        session()->forget('cart');
+    }
+
+    /**
+     * Return the product's effective cart price.
+     */
+    protected function priceFor(Product $product): float
+    {
+        return (float) (
+            ($product->discount_price !== null && $product->discount_price > 0)
+                ? $product->discount_price
+                : $product->price
+        );
+    }
+
+    /**
+     * Recalculate and persist the database cart total.
+     */
+    protected function refreshCartTotal(Cart $cart): void
+    {
+        $total = (float) $cart->items()
+            ->get()
+            ->sum(function ($item) {
+                return ((float) $item->price) * ((int) $item->quantity);
+            });
+
+        $cart->forceFill([
+            'total_amount' => round($total, 2),
+        ])->save();
     }
 }
