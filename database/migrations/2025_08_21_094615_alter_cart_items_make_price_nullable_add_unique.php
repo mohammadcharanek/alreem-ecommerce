@@ -32,14 +32,14 @@ return new class extends Migration {
         });
 
         // 3) Ensure one row per (cart_id, product_id)
-        Schema::table('cart_items', function (Blueprint $table) {
-            // Only add if it doesn't already exist
-            $indexes = collect(DB::select('SHOW INDEX FROM cart_items'))
-                ->pluck('Key_name')->all();
-            if (!in_array('cart_items_cart_id_product_id_unique', $indexes, true)) {
+        if (!Schema::hasIndex(
+            'cart_items',
+            'cart_items_cart_id_product_id_unique'
+        )) {
+            Schema::table('cart_items', function (Blueprint $table) {
                 $table->unique(['cart_id', 'product_id'], 'cart_items_cart_id_product_id_unique');
-            }
-        });
+            });
+        }
     }
 
     public function down(): void

@@ -41,6 +41,21 @@ class GoogleAuthController extends Controller
                     ]);
             }
 
+            $emailVerified = filter_var(
+                $googleUser->user['email_verified']
+                    ?? $googleUser->user['verified_email']
+                    ?? false,
+                FILTER_VALIDATE_BOOLEAN
+            );
+
+            if (!$emailVerified) {
+                return redirect()
+                    ->route('login')
+                    ->withErrors([
+                        'google' => 'Google could not verify this account email address.',
+                    ]);
+            }
+
             /*
              * First find an account already linked to this Google account.
              */
@@ -76,20 +91,27 @@ class GoogleAuthController extends Controller
                     'email_verified_at' => $user->email_verified_at ?: now(),
                 ])->save();
             } else {
-                $user = User::create([
+                $user = new User([
                     'name' => $googleUser->getName()
                         ?: $googleUser->getNickname()
                         ?: 'Google User',
                     'email' => $email,
                     'google_id' => $googleId,
                     'avatar' => $googleUser->getAvatar(),
-                    'email_verified_at' => now(),
                     'password' => null,
                     'phone' => null,
                 ]);
+
+                /*
+                 * Keep email_verified_at protected from mass assignment while
+                 * recording Google's verified-email assertion explicitly.
+                 */
+                $user->forceFill([
+                    'email_verified_at' => now(),
+                ])->save();
             }
 
-            Auth::login($user, true);
+            Auth::login($user);
 
             request()->session()->regenerate();
 

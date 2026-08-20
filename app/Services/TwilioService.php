@@ -7,18 +7,44 @@ use Twilio\Rest\Client;
 
 class TwilioService
 {
-    protected Client $client;
+    protected ?Client $client = null;
 
     public function __construct()
     {
-        $sid = config('services.twilio.sid');
-        $token = config('services.twilio.token');
+        $sid = trim((string) config('services.twilio.sid'));
+        $token = trim((string) config('services.twilio.token'));
 
-        $this->client = new Client($sid, $token);
+        if ($sid === '' || $token === '') {
+            Log::warning(
+                'Twilio SMS is not configured; messages will be skipped.',
+                [
+                    'configuration_keys' => [
+                        'account_sid',
+                        'auth_token',
+                    ],
+                ]
+            );
+
+            return;
+        }
+
+        $this->client = $this->createClient($sid, $token);
+    }
+
+    /**
+     * Create the SDK client. Kept as a seam for no-network tests.
+     */
+    protected function createClient(string $sid, string $token): Client
+    {
+        return new Client($sid, $token);
     }
 
     public function sendSms(string $to, string $message): bool
     {
+        if ($this->client === null) {
+            return false;
+        }
+
         try {
             $from = config('services.twilio.from');
 
@@ -34,7 +60,9 @@ class TwilioService
 
             return true;
         } catch (\Throwable $e) {
-            Log::error('Twilio SMS failed: ' . $e->getMessage());
+            Log::error('Twilio SMS failed.', [
+                'exception' => get_class($e),
+            ]);
 
             return false;
         }
@@ -51,4 +79,4 @@ class TwilioService
 
         return $this->sendSms($adminPhone, $message);
     }
-}   
+}
