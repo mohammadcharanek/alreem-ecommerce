@@ -1,243 +1,350 @@
-<nav x-data="catbar()" class="bg-white border-b shadow-sm z-50">
-  @php
-    // Use composer-provided nav categories; fall back safely
-    $raw = ($navCategories ?? $categories ?? collect());
+@php
+    // Use composer-provided navigation categories and fall back safely.
+    $raw = $navCategories ?? $categories ?? collect();
 
-    // Keep only top-level parents
-    $parents = collect($raw)->filter(fn($c) => ($c->parent_id ?? null) === null);
+    // Top-level categories only.
+    $parents = collect($raw)
+        ->filter(fn ($category) => ($category->parent_id ?? null) === null)
+        ->values();
 
-    // Reindex
-    $parents = $parents->values();
+    // Keep the desktop bar compact. Overflow goes into "More".
+    $top = $parents->take(6)->values();
+    $more = $parents->slice(6)->values();
+@endphp
 
-    // Split into visible + overflow "More"
-    $top  = $parents->take(8)->values();
-    $more = $parents->slice(8)->values();
+@if($parents->count())
+    <nav
+        x-data="catbar()"
+        class="relative z-[60] border-b border-slate-200 bg-white"
+        aria-label="Product categories"
+    >
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
-    // Toggle for showing category icons in bar
-    $showIcons = false;
-  @endphp
+            {{-- Desktop category navigation --}}
+            <div class="hidden h-12 items-center gap-2 md:flex">
+                <a
+                    href="{{ route('products.index') }}"
+                    class="inline-flex shrink-0 items-center gap-2 rounded-lg bg-slate-950 px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] text-white transition hover:bg-blue-700"
+                >
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                        <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                        <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                        <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+                    </svg>
+                    Shop categories
+                </a>
 
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <!-- Row -->
-    <div class="flex items-center h-14">
-      <!-- Logo area -->
-      <a href="{{ url('/') }}" class="mr-4 flex-shrink-0 text-2xl font-bold text-gray-900"></a>
+                <span class="h-5 w-px shrink-0 bg-slate-200" aria-hidden="true"></span>
 
-      <!-- Desktop: main nav -->
-      <div class="hidden md:flex items-center gap-1" role="menubar" aria-label="Product categories">
-        {{-- Primary parents --}}
-        @foreach ($top as $parent)
-          @php $idx = $loop->index; @endphp
-          <div class="relative"
-               @mouseenter="openMenu({{ $idx }})"
-               @mouseleave="closeMenuDelayed({{ $idx }})"
-               @focusin="openMenu({{ $idx }})"
-               @focusout="closeMenuDelayed({{ $idx }})">
+                <div class="flex min-w-0 flex-1 items-center gap-1">
+                    @foreach($top as $parent)
+                        @php $idx = $loop->index; @endphp
 
-            <a href="{{ route('products.byCategory', ['slug' => $parent->slug]) }}"
-               class="inline-flex items-center {{ $showIcons ? 'gap-2' : 'gap-0' }} px-3 py-2 rounded-md text-sm font-medium
-                      text-gray-800 hover:text-blue-700 hover:bg-blue-50 transition"
-               role="menuitem" aria-haspopup="{{ $parent->children->count() ? 'true' : 'false' }}"
-               aria-expanded="false">
-              @if($showIcons && !empty($parent->image))
-                <img src="{{ asset('storage/'.$parent->image) }}" alt="" class="h-4 w-4 object-contain" loading="lazy">
-              @endif
-              <span class="truncate max-w-[10rem]">{{ $parent->name }}</span>
-              @if($parent->children->count())
-                <svg class="h-4 w-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.128l3.71-3.9a.75.75 0 111.08 1.04l-4.24 4.46a.75.75 0 01-1.08 0l-4.24-4.46a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
-                </svg>
-              @endif
-            </a>
+                        <div
+                            class="relative"
+                            @mouseenter="openMenu({{ $idx }})"
+                            @mouseleave="closeMenuDelayed({{ $idx }})"
+                            @focusin="openMenu({{ $idx }})"
+                            @focusout="closeMenuDelayed({{ $idx }})"
+                        >
+                            <a
+                                href="{{ route('products.byCategory', ['slug' => $parent->slug]) }}"
+                                class="inline-flex max-w-[11rem] items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-blue-50 hover:text-blue-700"
+                                role="menuitem"
+                                aria-haspopup="{{ $parent->children->count() ? 'true' : 'false' }}"
+                            >
+                                <span class="truncate">{{ $parent->name }}</span>
 
-            {{-- Mega dropdown --}}
-            @if ($parent->children->count())
-              <div x-show="isOpen({{ $idx }})" x-transition.opacity x-cloak
-                   class="absolute left-0 top-full mt-2 w-[28rem] bg-white border border-gray-200
-                          rounded-lg shadow-lg p-4"
-                   @mouseenter="cancelClose({{ $idx }})"
-                   @mouseleave="closeMenu({{ $idx }})">
-                <div class="grid grid-cols-2 gap-4 max-h-80 overflow-y-auto">
-                  @foreach ($parent->children as $child)
-                    <div>
-                      <a href="{{ route('products.byCategory', ['slug' => $child->slug]) }}"
-                         class="flex items-center {{ $showIcons ? 'gap-2' : 'gap-0' }} text-gray-900 font-semibold text-sm hover:text-blue-700">
-                        @if($showIcons && !empty($child->image))
-                          <img src="{{ asset('storage/'.$child->image) }}" alt="" class="h-4 w-4 object-contain" loading="lazy">
-                        @endif
-                        <span class="truncate">{{ $child->name }}</span>
-                      </a>
-                      @if($child->children->count())
-                        <ul class="mt-2 space-y-1">
-                          @foreach ($child->children as $sub)
-                            <li>
-                              <a href="{{ route('products.byCategory', ['slug' => $sub->slug]) }}"
-                                 class="block text-sm text-gray-600 hover:text-blue-700 truncate">
-                                {{ $sub->name }}
-                              </a>
-                            </li>
-                          @endforeach
-                        </ul>
-                      @endif
-                    </div>
-                  @endforeach
-                </div>
-              </div>
-            @endif
-          </div>
-        @endforeach
+                                @if($parent->children->count())
+                                    <svg class="h-3.5 w-3.5 shrink-0 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.128l3.71-3.9a.75.75 0 1 1 1.08 1.04l-4.24 4.46a.75.75 0 0 1-1.08 0l-4.24-4.46a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd"></path>
+                                    </svg>
+                                @endif
+                            </a>
 
-        {{-- More menu --}}
-        @if($more->count())
-          <div class="relative"
-               @mouseenter="openMenu('more')"
-               @mouseleave="closeMenuDelayed('more')"
-               @focusin="openMenu('more')"
-               @focusout="closeMenuDelayed('more')">
-            <button type="button"
-                    class="inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium
-                           text-gray-800 hover:text-blue-700 hover:bg-blue-50 transition">
-              More
-              <svg class="h-4 w-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.128l3.71-3.9a.75.75 0 111.08 1.04l-4.24 4.46a.75.75 0 01-1.08 0l-4.24-4.46a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
-              </svg>
-            </button>
+                            @if($parent->children->count())
+                                <div
+                                    x-show="isOpen({{ $idx }})"
+                                    x-cloak
+                                    x-transition.origin.top.left
+                                    @mouseenter="cancelClose({{ $idx }})"
+                                    @mouseleave="closeMenu({{ $idx }})"
+                                    class="absolute left-0 top-full z-[80] mt-2 w-[32rem] overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl"
+                                >
+                                    <div class="mb-3 flex items-center justify-between border-b border-slate-100 pb-3">
+                                        <div>
+                                            <p class="text-xs font-bold uppercase tracking-[0.14em] text-blue-700">
+                                                {{ $parent->name }}
+                                            </p>
+                                            <p class="mt-1 text-xs text-slate-500">
+                                                Browse subcategories
+                                            </p>
+                                        </div>
 
-            <div x-show="isOpen('more')" x-transition.opacity x-cloak
-                 class="absolute left-0 top-full mt-2 w-72 bg-white border border-gray-200 rounded-lg shadow-lg p-2">
-              <ul class="max-h-80 overflow-y-auto">
-                @foreach($more as $parent)
-                  <li class="relative group">
-                    <a href="{{ route('products.byCategory', ['slug' => $parent->slug]) }}"
-                       class="flex items-center justify-between gap-2 px-2 py-2 rounded hover:bg-gray-50">
-                      <span class="truncate text-sm text-gray-800">{{ $parent->name }}</span>
-                      @if($parent->children->count())
-                        <svg class="h-4 w-4 text-gray-400 group-hover:text-gray-600" viewBox="0 0 20 20" fill="currentColor">
-                          <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01-.02-1.06L11.128 10 7.19 6.29a.75.75 0 111.04-1.08l4.46 4.24a.75.75 0 010 1.08l-4.46 4.24a.75.75 0 01-1.06 0z" clip-rule="evenodd"/>
-                        </svg>
-                      @endif
-                    </a>
-                    @if($parent->children->count())
-                      <!-- flyout -->
-                      <div class="absolute left-full top-0 ml-2 hidden group-hover:block bg-white border border-gray-200 rounded-lg shadow-lg p-3 w-72">
-                        <div class="space-y-2 max-h-80 overflow-y-auto">
-                          @foreach($parent->children as $child)
-                            <div>
-                              <a href="{{ route('products.byCategory', ['slug' => $child->slug]) }}"
-                                 class="block text-sm font-semibold text-gray-900 hover:text-blue-700 truncate">
-                                {{ $child->name }}
-                              </a>
-                              @if($child->children->count())
-                                <ul class="mt-1 space-y-1">
-                                  @foreach($child->children as $sub)
-                                    <li>
-                                      <a href="{{ route('products.byCategory', ['slug' => $sub->slug]) }}"
-                                         class="block text-sm text-gray-600 hover:text-blue-700 truncate">
-                                        {{ $sub->name }}
-                                      </a>
-                                    </li>
-                                  @endforeach
-                                </ul>
-                              @endif
-                            </div>
-                          @endforeach
+                                        <a
+                                            href="{{ route('products.byCategory', ['slug' => $parent->slug]) }}"
+                                            class="text-xs font-bold text-blue-700 hover:text-blue-900"
+                                        >
+                                            View all
+                                        </a>
+                                    </div>
+
+                                    <div class="grid max-h-80 grid-cols-2 gap-x-6 gap-y-4 overflow-y-auto pr-1">
+                                        @foreach($parent->children as $child)
+                                            <div class="min-w-0">
+                                                <a
+                                                    href="{{ route('products.byCategory', ['slug' => $child->slug]) }}"
+                                                    class="block truncate text-sm font-bold text-slate-900 transition hover:text-blue-700"
+                                                >
+                                                    {{ $child->name }}
+                                                </a>
+
+                                                @if($child->children->count())
+                                                    <ul class="mt-2 space-y-1.5">
+                                                        @foreach($child->children as $sub)
+                                                            <li>
+                                                                <a
+                                                                    href="{{ route('products.byCategory', ['slug' => $sub->slug]) }}"
+                                                                    class="block truncate text-sm text-slate-500 transition hover:text-blue-700"
+                                                                >
+                                                                    {{ $sub->name }}
+                                                                </a>
+                                                            </li>
+                                                        @endforeach
+                                                    </ul>
+                                                @endif
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
                         </div>
-                      </div>
-                    @endif
-                  </li>
-                @endforeach
-              </ul>
-            </div>
-          </div>
-        @endif
-      </div>
+                    @endforeach
 
-      <!-- Mobile toggler -->
-      <div class="ml-auto md:hidden">
-        <button @click="mobileOpen = !mobileOpen" type="button"
-                class="text-gray-600 hover:text-gray-900 focus:outline-none focus:ring rounded p-1.5"
-                :aria-expanded="mobileOpen.toString()" aria-label="Toggle menu">
-          <svg x-show="!mobileOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M4 6h16M4 12h16M4 18h16"/>
-          </svg>
-          <svg x-show="mobileOpen" x-cloak class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        </button>
-      </div>
-    </div>
-  </div>
+                    @if($more->count())
+                        <div
+                            class="relative"
+                            @mouseenter="openMenu('more')"
+                            @mouseleave="closeMenuDelayed('more')"
+                            @focusin="openMenu('more')"
+                            @focusout="closeMenuDelayed('more')"
+                        >
+                            <button
+                                type="button"
+                                class="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-blue-50 hover:text-blue-700"
+                            >
+                                More
+                                <svg class="h-3.5 w-3.5 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.128l3.71-3.9a.75.75 0 1 1 1.08 1.04l-4.24 4.46a.75.75 0 0 1-1.08 0l-4.24-4.46a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd"></path>
+                                </svg>
+                            </button>
 
-  <!-- Mobile accordion -->
-  <div x-show="mobileOpen" x-cloak class="md:hidden bg-white border-t border-gray-200 shadow-inner">
-    <div class="px-4 py-3 space-y-1 max-h-[70vh] overflow-y-auto">
-      @foreach($parents as $p)
-        <div x-data="{ open: false }" class="border-b border-gray-100">
-          <div class="flex items-center justify-between">
-            <a href="{{ route('products.byCategory', ['slug' => $p->slug]) }}"
-               class="py-3 text-gray-900 font-semibold">{{ $p->name }}</a>
-            @if($p->children->count())
-              <button @click="open = !open" class="p-2 text-gray-600" aria-label="Toggle subcategories">
-                <svg class="w-4 h-4 transition-transform" :class="{'rotate-180': open}" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.128l3.71-3.9a.75.75 0 111.08 1.04l-4.24 4.46a.75.75 0 01-1.08 0l-4.24-4.46a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
-                </svg>
-              </button>
-            @endif
-          </div>
-          @if($p->children->count())
-            <div x-show="open" x-cloak class="pb-3 pl-2">
-              @foreach($p->children as $c)
-                <div x-data="{ open2: false }" class="mb-1">
-                  <div class="flex items-center justify-between">
-                    <a href="{{ route('products.byCategory', ['slug' => $c->slug]) }}"
-                       class="block py-2 text-gray-700 hover:text-blue-700">{{ $c->name }}</a>
-                    @if($c->children->count())
-                      <button @click="open2 = !open2" class="p-2 text-gray-600" aria-label="Toggle subcategories">
-                        <svg class="w-4 h-4 transition-transform" :class="{'rotate-180': open2}" viewBox="0 0 20 20" fill="currentColor">
-                          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.128l3.71-3.9a.75.75 0 111.08 1.04l-4.24 4.46a.75.75 0 010 1.08l-4.46 4.24a.75.75 0 01-1.06 0z" clip-rule="evenodd"/>
-                        </svg>
-                      </button>
+                            <div
+                                x-show="isOpen('more')"
+                                x-cloak
+                                x-transition.origin.top.left
+                                @mouseenter="cancelClose('more')"
+                                @mouseleave="closeMenu('more')"
+                                class="absolute left-0 top-full z-[80] mt-2 w-72 rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl"
+                            >
+                                <div class="max-h-80 overflow-y-auto">
+                                    @foreach($more as $parent)
+                                        <a
+                                            href="{{ route('products.byCategory', ['slug' => $parent->slug]) }}"
+                                            class="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-blue-50 hover:text-blue-700"
+                                        >
+                                            <span class="truncate">{{ $parent->name }}</span>
+
+                                            @if($parent->children->count())
+                                                <span class="text-xs text-slate-400">
+                                                    {{ $parent->children->count() }}
+                                                </span>
+                                            @endif
+                                        </a>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
                     @endif
-                  </div>
-                  @if($c->children->count())
-                    <div x-show="open2" x-cloak class="pl-3">
-                      @foreach($c->children as $s)
-                        <a href="{{ route('products.byCategory', ['slug' => $s->slug]) }}"
-                           class="block py-1 text-sm text-gray-600 hover:text-blue-700">{{ $s->name }}</a>
-                      @endforeach
-                    </div>
-                  @endif
                 </div>
-              @endforeach
-            </div>
-          @endif
-        </div>
-      @endforeach
-    </div>
-  </div>
-</nav>
 
-<script>
-function catbar() {
-  return {
-    openId: null,
-    mobileOpen: false,
-    timers: new Map(),
-    isOpen(id) { return this.openId === id; },
-    openMenu(id) { this.clearTimer(id); this.openId = id; },
-    closeMenu(id) { this.clearTimer(id); if (this.openId === id) this.openId = null; },
-    closeMenuDelayed(id) {
-      this.clearTimer(id);
-      const t = setTimeout(() => { if (this.openId === id) this.openId = null; }, 150);
-      this.timers.set(id, t);
-    },
-    cancelClose(id) { this.clearTimer(id); },
-    clearTimer(id) {
-      const t = this.timers.get(id);
-      if (t) { clearTimeout(t); this.timers.delete(id); }
-    }
-  }
-}
-</script>
+                <a
+                    href="{{ route('products.index') }}"
+                    class="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold text-blue-700 transition hover:bg-blue-50 hover:text-blue-900"
+                >
+                    View all
+                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="m9 18 6-6-6-6"></path>
+                    </svg>
+                </a>
+            </div>
+
+            {{-- Mobile category navigation --}}
+            <div class="flex min-h-12 items-center justify-between gap-3 md:hidden">
+                <button
+                    type="button"
+                    @click="mobileOpen = !mobileOpen"
+                    :aria-expanded="mobileOpen.toString()"
+                    class="inline-flex min-h-10 items-center gap-2 rounded-lg text-sm font-bold text-slate-800"
+                >
+                    <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-slate-950 text-white">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                            <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                            <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                            <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+                        </svg>
+                    </span>
+
+                    Shop categories
+
+                    <svg class="h-4 w-4 text-slate-400 transition" :class="{ 'rotate-180': mobileOpen }" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.128l3.71-3.9a.75.75 0 1 1 1.08 1.04l-4.24 4.46a.75.75 0 0 1-1.08 0l-4.24-4.46a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd"></path>
+                    </svg>
+                </button>
+
+                <a
+                    href="{{ route('products.index') }}"
+                    class="text-xs font-bold text-blue-700"
+                >
+                    View all
+                </a>
+            </div>
+        </div>
+
+        {{-- Mobile category accordion --}}
+        <div
+            x-show="mobileOpen"
+            x-cloak
+            x-transition
+            @click.outside="mobileOpen = false"
+            class="border-t border-slate-200 bg-white md:hidden"
+        >
+            <div class="mx-auto max-h-[70vh] max-w-7xl overflow-y-auto px-4 py-3 sm:px-6">
+                @foreach($parents as $parent)
+                    <div x-data="{ open: false }" class="border-b border-slate-100 last:border-b-0">
+                        <div class="flex items-center gap-2">
+                            <a
+                                href="{{ route('products.byCategory', ['slug' => $parent->slug]) }}"
+                                class="flex min-h-12 min-w-0 flex-1 items-center font-semibold text-slate-800"
+                            >
+                                <span class="truncate">{{ $parent->name }}</span>
+                            </a>
+
+                            @if($parent->children->count())
+                                <button
+                                    type="button"
+                                    @click="open = !open"
+                                    :aria-expanded="open.toString()"
+                                    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-50"
+                                    aria-label="Toggle {{ $parent->name }} subcategories"
+                                >
+                                    <svg class="h-4 w-4 transition" :class="{ 'rotate-180': open }" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.128l3.71-3.9a.75.75 0 1 1 1.08 1.04l-4.24 4.46a.75.75 0 0 1-1.08 0l-4.24-4.46a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </button>
+                            @endif
+                        </div>
+
+                        @if($parent->children->count())
+                            <div x-show="open" x-cloak class="pb-3 pl-3">
+                                @foreach($parent->children as $child)
+                                    <div x-data="{ childOpen: false }">
+                                        <div class="flex items-center gap-2">
+                                            <a
+                                                href="{{ route('products.byCategory', ['slug' => $child->slug]) }}"
+                                                class="flex min-h-10 min-w-0 flex-1 items-center text-sm font-semibold text-slate-700"
+                                            >
+                                                <span class="truncate">{{ $child->name }}</span>
+                                            </a>
+
+                                            @if($child->children->count())
+                                                <button
+                                                    type="button"
+                                                    @click="childOpen = !childOpen"
+                                                    :aria-expanded="childOpen.toString()"
+                                                    class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400"
+                                                    aria-label="Toggle {{ $child->name }} subcategories"
+                                                >
+                                                    <svg class="h-3.5 w-3.5 transition" :class="{ 'rotate-180': childOpen }" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                        <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.128l3.71-3.9a.75.75 0 1 1 1.08 1.04l-4.24 4.46a.75.75 0 0 1-1.08 0l-4.24-4.46a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd"></path>
+                                                    </svg>
+                                                </button>
+                                            @endif
+                                        </div>
+
+                                        @if($child->children->count())
+                                            <div x-show="childOpen" x-cloak class="space-y-1 border-l border-slate-200 pb-2 pl-3">
+                                                @foreach($child->children as $sub)
+                                                    <a
+                                                        href="{{ route('products.byCategory', ['slug' => $sub->slug]) }}"
+                                                        class="block py-1.5 text-sm text-slate-500 transition hover:text-blue-700"
+                                                    >
+                                                        {{ $sub->name }}
+                                                    </a>
+                                                @endforeach
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </nav>
+
+    <script>
+        function catbar() {
+            return {
+                openId: null,
+                mobileOpen: false,
+                timers: new Map(),
+
+                isOpen(id) {
+                    return this.openId === id;
+                },
+
+                openMenu(id) {
+                    this.clearTimer(id);
+                    this.openId = id;
+                },
+
+                closeMenu(id) {
+                    this.clearTimer(id);
+
+                    if (this.openId === id) {
+                        this.openId = null;
+                    }
+                },
+
+                closeMenuDelayed(id) {
+                    this.clearTimer(id);
+
+                    const timer = setTimeout(() => {
+                        if (this.openId === id) {
+                            this.openId = null;
+                        }
+                    }, 160);
+
+                    this.timers.set(id, timer);
+                },
+
+                cancelClose(id) {
+                    this.clearTimer(id);
+                },
+
+                clearTimer(id) {
+                    const timer = this.timers.get(id);
+
+                    if (timer) {
+                        clearTimeout(timer);
+                        this.timers.delete(id);
+                    }
+                }
+            };
+        }
+    </script>
+@endif
