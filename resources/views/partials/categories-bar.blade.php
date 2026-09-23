@@ -8,8 +8,8 @@
         ->values();
 
     // Keep the desktop bar compact. Overflow goes into "More".
-    $top = $parents->take(6)->values();
-    $more = $parents->slice(6)->values();
+    $top = $parents->take(5)->values();
+    $more = $parents->slice(5)->values();
 @endphp
 
 @if($parents->count())
@@ -124,7 +124,7 @@
 
                     @if($more->count())
                         <div
-                            class="relative"
+                            class="relative shrink-0"
                             @mouseenter="openMenu('more')"
                             @mouseleave="closeMenuDelayed('more')"
                             @focusin="openMenu('more')"
@@ -169,15 +169,29 @@
                     @endif
                 </div>
 
-                <a
-                    href="{{ route('products.index') }}"
-                    class="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold text-blue-700 transition hover:bg-blue-50 hover:text-blue-900"
-                >
-                    View all
-                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <path d="m9 18 6-6-6-6"></path>
-                    </svg>
-                </a>
+                <div class="ml-2 flex shrink-0 items-center gap-3">
+                    <span class="h-5 w-px bg-slate-200" aria-hidden="true"></span>
+
+                    <a
+                        href="{{ route('products.index') }}"
+                        class="inline-flex items-center gap-1.5 rounded-lg px-3 py-2
+                               text-xs font-bold text-blue-700 transition
+                               hover:bg-blue-50 hover:text-blue-900"
+                    >
+                        All Products
+
+                        <svg
+                            class="h-3.5 w-3.5"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            aria-hidden="true"
+                        >
+                            <path d="m9 18 6-6-6-6"></path>
+                        </svg>
+                    </a>
+                </div>
             </div>
 
             {{-- Mobile category navigation --}}
